@@ -10,7 +10,7 @@ const AuthCallbackPage = () => {
   const { isAuthenticated, isLoading } = useAppSelector((state) => state.auth)
 
   const nextPath = searchParams.get('next')
-  const safeNextPath = nextPath && nextPath.startsWith('/') ? nextPath : '/profile'
+  const safeNextPath = nextPath && nextPath.startsWith('/') ? nextPath : '/'
 
   useEffect(() => {
     setDocumentMeta({

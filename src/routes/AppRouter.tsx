@@ -13,6 +13,7 @@ const CartPage = lazy(() => import('../pages/CartPage'))
 const CheckoutPage = lazy(() => import('../pages/CheckoutPage'))
 const LoginPage = lazy(() => import('../pages/LoginPage'))
 const RegisterPage = lazy(() => import('../pages/RegisterPage'))
+const AuthCallbackPage = lazy(() => import('../pages/AuthCallbackPage'))
 const ProfilePage = lazy(() => import('../pages/ProfilePage'))
 const OrdersPage = lazy(() => import('../pages/OrdersPage'))
 const OrderSuccessPage = lazy(() => import('../pages/OrderSuccessPage'))
@@ -37,7 +38,7 @@ export const router = createBrowserRouter([
         element: lazyElement(<ProductsPage />),
       },
       {
-        path: 'products/:slug',
+        path: 'products/:id',
         element: lazyElement(<ProductDetailPage />),
       },
       {
@@ -59,6 +60,10 @@ export const router = createBrowserRouter([
       {
         path: 'register',
         element: lazyElement(<RegisterPage />),
+      },
+      {
+        path: 'auth/callback',
+        element: lazyElement(<AuthCallbackPage />),
       },
       {
         path: 'profile',

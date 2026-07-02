@@ -1,23 +1,31 @@
-export type ProductCategory =
-  | 'whey-protein'
-  | 'creatine'
-  | 'pre-workout'
-  | 'protein-bars'
-  | 'vitamins'
+export type ProductCategory = string
 
 export interface Product {
   id: string
   slug: string
+
   name: string
+  brand?: string
+
   category: ProductCategory
+  subtype?: string
+
+  flavor?: string
+  weight?: string
+
   price: number
-  compareAtPrice?: number
+  discountPrice?: number
+
   rating: number
   reviewCount: number
+
   image: string
+
   shortDescription: string
   description: string
+stock: number;
   inStock: boolean
+
   featured?: boolean
 }
 

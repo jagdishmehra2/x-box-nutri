@@ -1,7 +1,10 @@
 import { Link } from 'react-router-dom'
+import { useAppSelector } from '../../hooks/useRedux'
 import { Button } from '../common/Button'
 
 export const HeroSection = () => {
+  const { isAuthenticated, isLoading } = useAppSelector((state) => state.auth)
+
   return (
     <section className="mx-auto grid max-w-6xl gap-8 px-4 pb-10 pt-12 sm:px-6 lg:grid-cols-[1.1fr_0.9fr] lg:px-8 lg:pt-16">
       <div>
@@ -18,11 +21,13 @@ export const HeroSection = () => {
           <Link to="/products">
             <Button size="lg">Shop Products</Button>
           </Link>
-          <Link to="/register">
-            <Button variant="secondary" size="lg">
-              Create Account
-            </Button>
-          </Link>
+          {!isAuthenticated && !isLoading ? (
+            <Link to="/register">
+              <Button variant="secondary" size="lg">
+                Create Account
+              </Button>
+            </Link>
+          ) : null}
         </div>
       </div>
 
@@ -34,8 +39,8 @@ export const HeroSection = () => {
         </p>
         <div className="mt-8 rounded-xl border border-zinc-700 bg-zinc-900 p-4">
           <p className="text-xs uppercase tracking-wide text-zinc-500">Limited drop price</p>
-          <p className="mt-2 text-3xl font-bold text-lime-400">$84.99</p>
-          <p className="mt-1 text-sm text-zinc-500 line-through">$99.99</p>
+          <p className="mt-2 text-3xl font-bold text-lime-400">₹84.99</p>
+          <p className="mt-1 text-sm text-zinc-500 line-through">₹99.99</p>
         </div>
       </div>
     </section>

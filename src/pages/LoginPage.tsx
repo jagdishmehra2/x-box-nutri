@@ -1,13 +1,14 @@
 import { useEffect, useState } from 'react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
-import { Link, useLocation, useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { z } from 'zod'
 import { useAppDispatch } from '../hooks/useRedux'
+import { GoogleAuthButton } from '../components/auth/GoogleAuthButton'
 import { Button } from '../components/common/Button'
 import { Input } from '../components/common/Input'
 import { setAuthUser } from '../features/auth/authSlice'
-import { signInWithEmail } from '../services/authService'
+import { signInWithEmail, signInWithGoogle } from '../services/authService'
 import { setDocumentMeta } from '../utils/seo'
 
 const loginSchema = z.object({
@@ -20,8 +21,8 @@ type LoginValues = z.infer<typeof loginSchema>
 const LoginPage = () => {
   const dispatch = useAppDispatch()
   const navigate = useNavigate()
-  const location = useLocation()
   const [submitError, setSubmitError] = useState('')
+  const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false)
 
   const {
     register,
@@ -64,14 +65,42 @@ const LoginPage = () => {
       }),
     )
 
-    const redirectTo = location.state?.from?.pathname ?? '/profile'
-    navigate(redirectTo, { replace: true })
+    navigate('/', { replace: true })
+  }
+
+  const handleGoogleSignIn = async () => {
+    setSubmitError('')
+    setIsGoogleSubmitting(true)
+
+    const { error } = await signInWithGoogle('/')
+
+    if (error) {
+      setSubmitError(error.message)
+      setIsGoogleSubmitting(false)
+      return
+    }
+
+    setIsGoogleSubmitting(false)
   }
 
   return (
     <section className="mx-auto max-w-md px-4 py-14 sm:px-6 lg:px-8">
       <h1 className="text-4xl font-semibold text-white">Login</h1>
       <p className="mt-2 text-zinc-400">Access your account and continue checkout.</p>
+
+      <div className="mt-6 space-y-5">
+        <GoogleAuthButton
+          disabled={isSubmitting}
+          isLoading={isGoogleSubmitting}
+          onClick={handleGoogleSignIn}
+        />
+
+        <div className="flex items-center gap-3 text-xs font-semibold uppercase text-zinc-500">
+          <span className="h-px flex-1 bg-zinc-800" />
+          <span>Email login</span>
+          <span className="h-px flex-1 bg-zinc-800" />
+        </div>
+      </div>
 
       <form className="mt-6 space-y-4" onSubmit={handleSubmit(onSubmit)} noValidate>
         <div>
@@ -101,7 +130,12 @@ const LoginPage = () => {
 
         {submitError ? <p className="text-sm text-red-400">{submitError}</p> : null}
 
-        <Button type="submit" className="w-full" size="lg" disabled={isSubmitting}>
+        <Button
+          type="submit"
+          className="w-full"
+          size="lg"
+          disabled={isSubmitting || isGoogleSubmitting}
+        >
           {isSubmitting ? 'Logging in...' : 'Login'}
         </Button>
       </form>

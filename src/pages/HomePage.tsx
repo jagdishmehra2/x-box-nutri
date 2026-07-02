@@ -1,14 +1,19 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
+import { EmptyState } from '../components/common/EmptyState'
+import { Loader } from '../components/common/Loader'
 import { categories } from '../constants/categories'
 import { getFeaturedProducts } from '../services/productService'
+import type { Product } from '../types/product'
 import { setDocumentMeta } from '../utils/seo'
 import { CategoryCard } from '../components/home/CategoryCard'
 import { HeroSection } from '../components/home/HeroSection'
 import { ProductGrid } from '../components/product/ProductGrid'
 
 const HomePage = () => {
-  const featuredProducts = getFeaturedProducts()
+  const [featuredProducts, setFeaturedProducts] = useState<Product[]>([])
+  const [isLoadingProducts, setIsLoadingProducts] = useState(true)
+  const [productsError, setProductsError] = useState('')
 
   useEffect(() => {
     setDocumentMeta({
@@ -16,6 +21,33 @@ const HomePage = () => {
       description:
         'Buy premium whey protein, creatine, pre-workout, vitamins, and gym nutrition products from X-Box Nutrition.',
     })
+
+    let isMounted = true
+
+    const loadProducts = async () => {
+      try {
+        const products = await getFeaturedProducts()
+        if (isMounted) {
+          setFeaturedProducts(products)
+        }
+      } catch (error) {
+        if (isMounted) {
+          setProductsError(
+            error instanceof Error ? error.message : 'Unable to load featured products.',
+          )
+        }
+      } finally {
+        if (isMounted) {
+          setIsLoadingProducts(false)
+        }
+      }
+    }
+
+    void loadProducts()
+
+    return () => {
+      isMounted = false
+    }
   }, [])
 
   return (
@@ -29,7 +61,21 @@ const HomePage = () => {
             View all
           </Link>
         </div>
-        <ProductGrid products={featuredProducts} />
+        {isLoadingProducts ? (
+          <Loader />
+        ) : productsError ? (
+          <EmptyState
+            title="Unable to load products"
+            description={productsError}
+          />
+        ) : featuredProducts.length ? (
+          <ProductGrid products={featuredProducts} />
+        ) : (
+          <EmptyState
+            title="No featured products"
+            description="Featured products from Supabase will appear here."
+          />
+        )}
       </section>
 
       <section className="mx-auto max-w-6xl px-4 pb-14 pt-8 sm:px-6 lg:px-8">

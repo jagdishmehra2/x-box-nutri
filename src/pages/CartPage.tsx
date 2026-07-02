@@ -13,10 +13,14 @@ const CartPage = () => {
   const dispatch = useAppDispatch()
   const items = useAppSelector((state) => state.cart.items)
 
-  const subtotal = items.reduce(
-    (total, item) => total + item.product.price * item.quantity,
-    0,
-  )
+const subtotal = items.reduce(
+  (total, item) =>
+    total +
+    (item.product.discountPrice ??
+      item.product.price) *
+      item.quantity,
+  0,
+)
 
   useEffect(() => {
     setDocumentMeta({
