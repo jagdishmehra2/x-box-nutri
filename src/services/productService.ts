@@ -69,6 +69,11 @@ const toBoolean = (value: unknown, fallback = false) => {
 const mapProduct = (row: ProductRow): Product => {
   const name = toString(row.name, "Product");
   const id = String(row.id ?? slugify(name));
+  const images = Array.isArray(row.image_urls)
+    ? row.image_urls.filter(
+        (image): image is string => typeof image === "string" && Boolean(image.trim()),
+      )
+    : [];
 
 return {
   id,
@@ -93,11 +98,8 @@ return {
     row.reviewCount ?? row.review_count,
   ),
 
-  image:
-    Array.isArray(row.image_urls) &&
-    row.image_urls.length
-      ? row.image_urls[0]
-      : '',
+  image: images[0] ?? '',
+  images,
 
   shortDescription: toString(
     row.shortDescription ??
@@ -124,42 +126,84 @@ weight: toString(row.weight),
 }
 };
 
-export const getProducts = async (category?: string) => {
+export type GetProductsOptions = {
+  category?: string;
+  featuredOnly?: boolean;
+  search?: string;
+  offset?: number;
+  limit?: number;
+};
+
+export const getProducts = async ({
+  category,
+  featuredOnly = false,
+  search = "",
+  offset = 0,
+  limit = 20,
+}: GetProductsOptions = {}) => {
   if (!supabase) {
-    throw new Error("Supabase is not configured.");
+    throw new Error("Something went wrong..");
   }
 
-  let query = supabase.from("products").select("*").eq("is_active", true);
+  const from = Math.max(0, offset);
+  const pageSize = Math.max(1, limit);
+  const to = from + pageSize - 1;
+
+  let query = supabase
+    .from("products")
+    .select("*", { count: "exact" })
+    .eq("is_active", true);
 
   if (category) {
     query = query.eq("category", category);
   }
 
-  const { data, error } = await query;
+  if (featuredOnly) {
+    query = query.eq("is_featured", true);
+  }
+
+  if (search.trim()) {
+    query = query.ilike("name", `%${search.trim()}%`);
+  }
+
+  const { data, error, count } = await query
+    .order(featuredOnly ? "created_at" : "id", {
+      ascending: !featuredOnly,
+    })
+    .range(from, to);
 
   if (error) throw error;
 
-  return (data ?? []).map((product) => mapProduct(product));
+  const products = (data ?? []).map((product) => mapProduct(product));
+  const total = count ?? 0;
+
+  return {
+    products,
+    total,
+    hasMore: from + products.length < total,
+  };
 };
 
 export const getAllProducts = getProducts;
 
 export const getFeaturedProducts = async () => {
-  const products = await getProducts();
-  const featuredProducts = products.filter((product) => product.featured);
+  const { products } = await getProducts({
+    featuredOnly: true,
+    limit: 3,
+  });
 
-  return featuredProducts.length ? featuredProducts : products.slice(0, 3);
+  return products;
 };
 
 export const getProductBySlug = async (id: string) => {
   if (!supabase) {
-    throw new Error("Supabase is not configured.");
+    throw new Error("Something went wrong..");
   }
 
   const { data, error } = await supabase
     .from("products")
     .select("*")
-    .eq("id", id)
+    .eq("slug", id)
     .maybeSingle();
   if (error) throw error;
  

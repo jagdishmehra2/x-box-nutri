@@ -8,7 +8,11 @@ import { GoogleAuthButton } from '../components/auth/GoogleAuthButton'
 import { Button } from '../components/common/Button'
 import { Input } from '../components/common/Input'
 import { setAuthUser } from '../features/auth/authSlice'
-import { signInWithEmail, signInWithGoogle } from '../services/authService'
+import {
+  mapAuthUser,
+  signInWithEmail,
+  signInWithGoogle,
+} from '../services/authService'
 import { setDocumentMeta } from '../utils/seo'
 
 const loginSchema = z.object({
@@ -59,10 +63,7 @@ const LoginPage = () => {
     }
 
     dispatch(
-      setAuthUser({
-        id: data.user.id,
-        email: data.user.email ?? values.email,
-      }),
+      setAuthUser(mapAuthUser(data.user)),
     )
 
     navigate('/', { replace: true })

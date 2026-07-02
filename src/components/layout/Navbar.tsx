@@ -4,10 +4,12 @@ import { navLinks } from '../../constants/navigation'
 import { useAppDispatch, useAppSelector } from '../../hooks/useRedux'
 import { setMobileMenuOpen } from '../../features/ui/uiSlice'
 import { cn } from '../../utils/cn'
+import { UserAvatar } from '../common/UserAvatar'
 
 export const Navbar = () => {
   const dispatch = useAppDispatch()
   const isMobileMenuOpen = useAppSelector((state) => state.ui.isMobileMenuOpen)
+  const { user, isAuthenticated } = useAppSelector((state) => state.auth)
 
   const cartCount = useAppSelector((state) =>
     state.cart.items.reduce((count, item) => count + item.quantity, 0),
@@ -45,21 +47,50 @@ export const Navbar = () => {
             <ShoppingCart className="h-4 w-4" />
             Cart ({cartCount})
           </NavLink>
+          {isAuthenticated && user && (
+            <NavLink
+              to="/profile"
+              className={({ isActive }) =>
+                cn(
+                  'rounded-full transition hover:ring-2 hover:ring-lime-300',
+                  isActive && 'ring-2 ring-lime-400',
+                )
+              }
+              aria-label="Open profile"
+            >
+              <UserAvatar src={user.avatarUrl} name={user.fullName} />
+            </NavLink>
+          )}
         </nav>
 
-        <button
-          className="inline-flex items-center justify-center rounded-lg p-2 text-zinc-200 hover:bg-zinc-800 md:hidden"
-          onClick={() => dispatch(setMobileMenuOpen(!isMobileMenuOpen))}
-          aria-label="Toggle navigation menu"
-          aria-expanded={isMobileMenuOpen}
-          aria-controls="mobile-menu"
-        >
-          {isMobileMenuOpen ? (
-            <X className="h-5 w-5" />
-          ) : (
-            <Menu className="h-5 w-5" />
+        <div className="flex items-center gap-2 md:hidden">
+          {isAuthenticated && user && (
+            <NavLink
+              to="/profile"
+              onClick={closeMenu}
+              className={({ isActive }) =>
+                cn('rounded-full', isActive && 'ring-2 ring-lime-400')
+              }
+              aria-label="Open profile"
+            >
+              <UserAvatar src={user.avatarUrl} name={user.fullName} />
+            </NavLink>
           )}
-        </button>
+
+          <button
+            className="inline-flex items-center justify-center rounded-lg p-2 text-zinc-200 hover:bg-zinc-800"
+            onClick={() => dispatch(setMobileMenuOpen(!isMobileMenuOpen))}
+            aria-label="Toggle navigation menu"
+            aria-expanded={isMobileMenuOpen}
+            aria-controls="mobile-menu"
+          >
+            {isMobileMenuOpen ? (
+              <X className="h-5 w-5" />
+            ) : (
+              <Menu className="h-5 w-5" />
+            )}
+          </button>
+        </div>
       </div>
 
       {isMobileMenuOpen ? (

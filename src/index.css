@@ -115,6 +115,43 @@
   --radius-4xl: calc(var(--radius) * 2.6);
 }
 
+@keyframes testimonial-scroll {
+  to {
+    transform: translateX(calc(-50% - 0.5rem));
+  }
+}
+
+.testimonial-marquee {
+  overflow: hidden;
+}
+
+.testimonial-track {
+  display: flex;
+  width: max-content;
+  gap: 1rem;
+  animation: testimonial-scroll 28s linear infinite;
+  will-change: transform;
+}
+
+.testimonial-marquee:hover .testimonial-track {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .testimonial-marquee {
+    overflow-x: auto;
+  }
+
+  .testimonial-track {
+    animation: none;
+    will-change: auto;
+  }
+
+  .testimonial-track > [aria-hidden='true'] {
+    display: none;
+  }
+}
+
 .dark {
   --background: oklch(0.145 0 0);
   --foreground: oklch(0.985 0 0);

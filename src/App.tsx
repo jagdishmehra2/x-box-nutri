@@ -4,6 +4,7 @@ import { useAppDispatch } from './hooks/useRedux'
 import { setAuthLoading, setAuthUser } from './features/auth/authSlice'
 import { supabase } from './lib/supabase'
 import { router } from './routes/AppRouter'
+import { mapAuthUser } from './services/authService'
 
 const App = () => {
   const dispatch = useAppDispatch()
@@ -20,12 +21,7 @@ const App = () => {
       const user = data.session?.user
       dispatch(
         setAuthUser(
-          user
-            ? {
-                id: user.id,
-                email: user.email ?? '',
-              }
-            : null,
+          user ? mapAuthUser(user) : null,
         ),
       )
       dispatch(setAuthLoading(false))
@@ -37,12 +33,7 @@ const App = () => {
       const user = session?.user
       dispatch(
         setAuthUser(
-          user
-            ? {
-                id: user.id,
-                email: user.email ?? '',
-              }
-            : null,
+          user ? mapAuthUser(user) : null,
         ),
       )
       dispatch(setAuthLoading(false))

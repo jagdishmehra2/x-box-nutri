@@ -93,7 +93,7 @@ export const DeliveryAddressForm = ({
 }: DeliveryAddressFormProps) => {
   const handleSubmit = async (values: DeliveryAddressValues) => {
     if (!supabase) {
-      toast.error("Supabase is not configured.");
+      toast.error("Something went wrong..");
       return;
     }
 

@@ -20,6 +20,7 @@ export interface Product {
   reviewCount: number
 
   image: string
+  images?: string[]
 
   shortDescription: string
   description: string

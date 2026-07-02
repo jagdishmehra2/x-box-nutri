@@ -7,7 +7,9 @@ import { getFeaturedProducts } from '../services/productService'
 import type { Product } from '../types/product'
 import { setDocumentMeta } from '../utils/seo'
 import { CategoryCard } from '../components/home/CategoryCard'
+import { FaqSection } from '../components/home/FaqSection'
 import { HeroSection } from '../components/home/HeroSection'
+import { TestimonialsSection } from '../components/home/TestimonialsSection'
 import { ProductGrid } from '../components/product/ProductGrid'
 
 const HomePage = () => {
@@ -57,7 +59,7 @@ const HomePage = () => {
       <section className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
         <div className="mb-5 flex items-center justify-between gap-3">
           <h2 className="text-3xl font-semibold text-white">Featured Products</h2>
-          <Link to="/products" className="text-sm font-semibold text-lime-400 hover:text-lime-300">
+          <Link to="/products?featured=true" className="text-sm font-semibold text-lime-400 hover:text-lime-300">
             View all
           </Link>
         </div>
@@ -88,6 +90,9 @@ const HomePage = () => {
           ))}
         </div>
       </section>
+
+      <TestimonialsSection />
+      <FaqSection />
     </>
   )
 }

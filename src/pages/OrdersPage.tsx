@@ -1,53 +1,25 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Package, Calendar, CreditCard, Truck } from "lucide-react";
 import { EmptyState } from "../components/common/EmptyState";
 import { Loader } from "../components/common/Loader";
 import { useAppSelector } from "../hooks/useRedux";
-import { supabase } from "../lib/supabase";
+import { useInfiniteScroll } from "../hooks/useInfiniteScroll";
+import { getOrders, type Order } from "../services/orderService";
 import { formatCurrency } from "../utils/currency";
 import { setDocumentMeta } from "../utils/seo";
 
-interface OrderItem {
-  id: string;
-  product_name: string;
-  product_image: string;
-  product_brand: string;
-  product_category: string;
-  product_subtype: string | null;
-  product_flavor: string | null;
-  product_weight: string | null;
-  quantity: number;
-  unit_price: number;
-  total_price: number;
-}
-
-interface Order {
-  id: string;
-  created_at: string;
-  total_amount: number;
-
-  payment_method: "online" | "cod";
-  payment_status: "paid" | "pending" | "failed";
-
-  order_status: string;
-
-  delivery_estimate: string;
-
-  shipping_name: string;
-  shipping_phone: string;
-  shipping_address: string;
-  shipping_city: string;
-  shipping_state: string;
-  shipping_pincode: string;
-
-  order_items: OrderItem[];
-}
+const ORDERS_PER_PAGE = 5;
 
 const OrdersPage = () => {
   const user = useAppSelector((state) => state.auth.user);
 
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [hasMoreOrders, setHasMoreOrders] = useState(false);
+  const [ordersError, setOrdersError] = useState("");
+  const [loadMoreError, setLoadMoreError] = useState("");
+  const loadMoreRequestRef = useRef(0);
 
   useEffect(() => {
     setDocumentMeta({
@@ -57,50 +29,103 @@ const OrdersPage = () => {
     });
   }, []);
 
+  const loadMoreOrders = useCallback(async () => {
+    if (!user?.id || isLoadingMore || !hasMoreOrders) return;
+
+    const requestId = ++loadMoreRequestRef.current;
+
+    try {
+      setIsLoadingMore(true);
+      setLoadMoreError("");
+
+      const nextPage = await getOrders({
+        userId: user.id,
+        offset: orders.length,
+        limit: ORDERS_PER_PAGE,
+      });
+
+      if (requestId !== loadMoreRequestRef.current) return;
+
+      setOrders((currentOrders) => [...currentOrders, ...nextPage.orders]);
+      setHasMoreOrders(nextPage.hasMore);
+    } catch (error) {
+      if (requestId !== loadMoreRequestRef.current) return;
+
+      setLoadMoreError(
+        error instanceof Error ? error.message : "Unable to load more orders.",
+      );
+      setHasMoreOrders(false);
+    } finally {
+      if (requestId === loadMoreRequestRef.current) {
+        setIsLoadingMore(false);
+      }
+    }
+  }, [hasMoreOrders, isLoadingMore, orders.length, user?.id]);
+
+  const infiniteScrollRef = useInfiniteScroll({
+    hasMore: hasMoreOrders,
+    isLoading: isLoadingMore,
+    onLoadMore: loadMoreOrders,
+  });
+
   useEffect(() => {
+    let isMounted = true;
+
     const loadOrders = async () => {
-      if (!user?.id || !supabase) {
-        setLoading(false);
+      if (!user?.id) {
+        if (isMounted) setLoading(false);
         return;
       }
 
-      const { data, error } = await supabase
-        .from("orders")
-        .select(`
-          *,
-          order_items(
-            id,
-            product_name,
-            product_image,
-            product_brand,
-            product_category,
-            product_subtype,
-            product_flavor,
-            product_weight,
-            quantity,
-            unit_price,
-            total_price
-          )
-        `)
-        .eq("user_id", user.id)
-        .order("created_at", { ascending: false });
+      loadMoreRequestRef.current += 1;
+      setLoading(true);
+      setOrders([]);
+      setHasMoreOrders(false);
+      setLoadMoreError("");
 
-      if (error) {
-        console.error(error);
-      } else {
-        setOrders((data as Order[]) ?? []);
+      try {
+        const firstPage = await getOrders({
+          userId: user.id,
+          offset: 0,
+          limit: ORDERS_PER_PAGE,
+        });
+
+        if (!isMounted) return;
+
+        setOrders(firstPage.orders);
+        setHasMoreOrders(firstPage.hasMore);
+        setOrdersError("");
+      } catch (error) {
+        if (!isMounted) return;
+
+        setOrdersError(
+          error instanceof Error ? error.message : "Unable to load orders.",
+        );
+      } finally {
+        if (isMounted) setLoading(false);
       }
-
-      setLoading(false);
     };
 
-    loadOrders();
-  }, [user]);
+    void loadOrders();
+
+    return () => {
+      isMounted = false;
+      loadMoreRequestRef.current += 1;
+    };
+  }, [user?.id]);
 
   if (loading) {
     return (
       <section className="mx-auto flex min-h-[50vh] max-w-6xl items-center justify-center">
         <Loader />
+      </section>
+    );
+  }
+
+  if (ordersError && !orders.length) {
+    return (
+      <section className="mx-auto max-w-4xl px-4 py-10">
+        <EmptyState title="Unable to load orders" description={ordersError} />
       </section>
     );
   }
@@ -320,6 +345,26 @@ const OrdersPage = () => {
     </div>
   </article>
 ))}
+
+        {hasMoreOrders && (
+          <div
+            ref={infiniteScrollRef}
+            className="flex h-20 items-center justify-center"
+            aria-hidden={!isLoadingMore}
+          >
+            {isLoadingMore && (
+              <div
+                className="h-8 w-8 animate-spin rounded-full border-2 border-zinc-700 border-t-lime-400"
+                role="status"
+                aria-label="Loading more orders"
+              />
+            )}
+          </div>
+        )}
+
+        {loadMoreError && (
+          <p className="text-center text-sm text-red-400">{loadMoreError}</p>
+        )}
       </div>
     </section>
   );

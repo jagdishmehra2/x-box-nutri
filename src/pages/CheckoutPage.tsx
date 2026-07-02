@@ -115,7 +115,7 @@ const CheckoutPage = () => {
   //   razorpayOrderId?: string,
   // ) => {
   //   if (!supabase) {
-  //     throw new Error("Supabase is not configured for order storage.");
+  //     throw new Error("Something went wrong. for order storage.");
   //   }
 
   //   if (!user?.id) {
@@ -622,55 +622,57 @@ const CheckoutPage = () => {
           </div>
         </article>
       )}
-      <article className="mt-6 rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
-        <h2 className="text-xl font-semibold text-white">Payment Method</h2>
+      {!editingAddress && (
+        <article className="mt-6 rounded-2xl border border-zinc-800 bg-zinc-900 p-6">
+          <h2 className="text-xl font-semibold text-white">Payment Method</h2>
 
-        <div className="mt-5 space-y-3">
-          <label
-            className={`flex cursor-pointer items-center justify-between rounded-xl border p-4 transition ${
-              paymentMethod === "online"
-                ? "border-lime-400 bg-lime-400/10"
-                : "border-zinc-800"
-            }`}
-          >
-            <div>
-              <p className="font-medium text-white">Pay Online</p>
+          <div className="mt-5 space-y-3">
+            <label
+              className={`flex cursor-pointer items-center justify-between rounded-xl border p-4 transition ${
+                paymentMethod === "online"
+                  ? "border-lime-400 bg-lime-400/10"
+                  : "border-zinc-800"
+              }`}
+            >
+              <div>
+                <p className="font-medium text-white">Pay Online</p>
 
-              <p className="text-sm text-zinc-400">
-                Secure payment via Razorpay
-              </p>
-            </div>
+                <p className="text-sm text-zinc-400">
+                  Secure payment via Razorpay
+                </p>
+              </div>
 
-            <input
-              type="radio"
-              checked={paymentMethod === "online"}
-              onChange={() => setPaymentMethod("online")}
-            />
-          </label>
+              <input
+                type="radio"
+                checked={paymentMethod === "online"}
+                onChange={() => setPaymentMethod("online")}
+              />
+            </label>
 
-          <label
-            className={`flex cursor-pointer items-center justify-between rounded-xl border p-4 transition ${
-              paymentMethod === "cod"
-                ? "border-lime-400 bg-lime-400/10"
-                : "border-zinc-800"
-            }`}
-          >
-            <div>
-              <p className="font-medium text-white">Cash on Delivery</p>
+            <label
+              className={`flex cursor-pointer items-center justify-between rounded-xl border p-4 transition ${
+                paymentMethod === "cod"
+                  ? "border-lime-400 bg-lime-400/10"
+                  : "border-zinc-800"
+              }`}
+            >
+              <div>
+                <p className="font-medium text-white">Cash on Delivery</p>
 
-              <p className="text-sm text-zinc-400">
-                Pay when your order arrives.
-              </p>
-            </div>
+                <p className="text-sm text-zinc-400">
+                  Pay when your order arrives.
+                </p>
+              </div>
 
-            <input
-              type="radio"
-              checked={paymentMethod === "cod"}
-              onChange={() => setPaymentMethod("cod")}
-            />
-          </label>
-        </div>
-      </article>
+              <input
+                type="radio"
+                checked={paymentMethod === "cod"}
+                onChange={() => setPaymentMethod("cod")}
+              />
+            </label>
+          </div>
+        </article>
+      )}
 
       {!editingAddress && !showAddAddressForm && (
         <article className="mt-6 rounded-2xl border border-zinc-800 bg-zinc-900 p-6">

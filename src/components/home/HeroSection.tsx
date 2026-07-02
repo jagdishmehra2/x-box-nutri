@@ -9,7 +9,7 @@ export const HeroSection = () => {
     <section className="mx-auto grid max-w-6xl gap-8 px-4 pb-10 pt-12 sm:px-6 lg:grid-cols-[1.1fr_0.9fr] lg:px-8 lg:pt-16">
       <div>
         <p className="inline-flex items-center rounded-full border border-zinc-700 bg-zinc-900 px-3 py-1 text-xs uppercase tracking-wider text-lime-300">
-          Premium gym nutrition
+          Premium Genuine Nutrition
         </p>
         <h1 className="mt-4 text-4xl font-bold uppercase leading-tight text-white sm:text-5xl">
           Fuel hard training with clean supplements
@@ -19,7 +19,7 @@ export const HeroSection = () => {
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <Link to="/products">
-            <Button size="lg">Shop Products</Button>
+            <Button size="lg">Shop All Products</Button>
           </Link>
           {!isAuthenticated && !isLoading ? (
             <Link to="/register">

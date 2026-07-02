@@ -8,7 +8,11 @@ import { GoogleAuthButton } from '../components/auth/GoogleAuthButton'
 import { Button } from '../components/common/Button'
 import { Input } from '../components/common/Input'
 import { setAuthUser } from '../features/auth/authSlice'
-import { signInWithGoogle, signUpWithEmail } from '../services/authService'
+import {
+  mapAuthUser,
+  signInWithGoogle,
+  signUpWithEmail,
+} from '../services/authService'
 import { setDocumentMeta } from '../utils/seo'
 
 const registerSchema = z
@@ -65,10 +69,7 @@ const RegisterPage = () => {
 
     if (data.user) {
       dispatch(
-        setAuthUser({
-          id: data.user.id,
-          email: data.user.email ?? values.email,
-        }),
+        setAuthUser(mapAuthUser(data.user)),
       )
       navigate('/', { replace: true })
       return
