@@ -19,9 +19,9 @@ const HomePage = () => {
 
   useEffect(() => {
     setDocumentMeta({
-      title: 'X-Box Nutrition | Premium Gym Supplements',
+      title: 'NutriStack-Smart Nutrition Store',
       description:
-        'Buy premium whey protein, creatine, pre-workout, vitamins, and gym nutrition products from X-Box Nutrition.',
+        'Buy premium whey protein, creatine, pre-workout, vitamins, and gym nutrition products from NutriStack.',
     })
 
     let isMounted = true

@@ -15,8 +15,8 @@ const ProfilePage = () => {
   const [isLoggingOut, setIsLoggingOut] = useState(false)
   useEffect(() => {
     setDocumentMeta({
-      title: 'Profile | X-Box Nutrition',
-      description: 'Manage your X-Box Nutrition profile and account settings.',
+      title: 'Profile | NutriStack',
+      description: 'Manage your NutriStack profile and account settings.',
     })
   }, [])
 

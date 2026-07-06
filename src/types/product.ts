@@ -24,6 +24,11 @@ export interface Product {
 
   shortDescription: string
   description: string
+  ingredients?: string | string[]
+  benefits?: string | string[]
+  tags?: string[]
+  warnings?: string | string[]
+
 stock: number;
   inStock: boolean
 

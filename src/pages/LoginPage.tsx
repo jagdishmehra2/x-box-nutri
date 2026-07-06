@@ -42,7 +42,7 @@ const LoginPage = () => {
 
   useEffect(() => {
     setDocumentMeta({
-      title: 'Login | X-Box Nutrition',
+      title: 'Login | NutriStack',
       description: 'Log in to manage your profile, orders, and checkout quickly.',
     })
   }, [])

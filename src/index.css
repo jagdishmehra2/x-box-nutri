@@ -137,8 +137,36 @@
   animation-play-state: paused;
 }
 
+@keyframes announcement-scroll {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.announcement-marquee {
+  overflow: hidden;
+}
+
+.announcement-track {
+  display: flex;
+  width: max-content;
+  animation: announcement-scroll 30s linear infinite;
+  will-change: transform;
+}
+
+.announcement-group {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+.announcement-marquee:hover .announcement-track {
+  animation-play-state: paused;
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .testimonial-marquee {
+  .testimonial-marquee,
+  .announcement-marquee {
     overflow-x: auto;
   }
 
@@ -148,6 +176,15 @@
   }
 
   .testimonial-track > [aria-hidden='true'] {
+    display: none;
+  }
+
+  .announcement-track {
+    animation: none;
+    will-change: auto;
+  }
+
+  .announcement-group[aria-hidden='true'] {
     display: none;
   }
 }

@@ -1,20 +1,20 @@
 export const contactInfo = {
   email: {
     label: 'Email',
-    value: 'hello@xboxnutrition.com',
-    href: 'mailto:hello@xboxnutrition.com',
+    value: 'hello@nutriStack.com',
+    href: 'mailto:hello@nutriStack.com',
     icon: 'mail',
   },
   instagram: {
     label: 'Instagram',
-    value: '@xboxnutrition',
-    href: 'https://instagram.com/xboxnutrition',
+    value: '@nutriStack',
+    href: 'https://instagram.com/nutriStack',
     icon: 'instagram',
   },
   x: {
     label: 'X (Twitter)',
-    value: '@xboxnutrition',
-    href: 'https://x.com/xboxnutrition',
+    value: '@nutriStack',
+    href: 'https://x.com/nutriStack',
     icon: 'x',
   },
 } as const

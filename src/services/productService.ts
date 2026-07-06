@@ -16,6 +16,11 @@ type ProductRow = {
   shortDescription?: string | null;
   short_description?: string | null;
   description?: string | null;
+  ingredients?: string | string[] | null;
+  benefits?: string | string[] | null;
+  key_benefits?: string | string[] | null;
+  tags?: string[] | null;
+  warnings?: string | string[] | null;
   featured?: boolean | string | number | null;
   is_featured?: boolean | string | number | null;
   brand?: string | null
@@ -55,6 +60,24 @@ const toOptionalNumber = (value: unknown) => {
   return Number.isFinite(parsedValue) ? parsedValue : undefined;
 };
 
+const toOptionalText = (value: unknown): string | string[] | undefined => {
+  if (typeof value === "string") return value.trim() || undefined;
+  if (!Array.isArray(value)) return undefined;
+
+  const items = value.filter(
+    (item): item is string => typeof item === "string" && Boolean(item.trim()),
+  );
+  return items.length ? items : undefined;
+};
+
+const toStringArray = (value: unknown) =>
+  Array.isArray(value)
+    ? value.filter(
+        (item): item is string =>
+          typeof item === "string" && Boolean(item.trim()),
+      )
+    : undefined;
+
 const toBoolean = (value: unknown, fallback = false) => {
   if (typeof value === "boolean") return value;
   if (typeof value === "number") return value > 0;
@@ -77,7 +100,7 @@ const mapProduct = (row: ProductRow): Product => {
 
 return {
   id,
-  slug: toString(row.slug, slugify(name) || id),
+  slug: toString(row.slug, id),
 
   name,
 
@@ -107,6 +130,10 @@ return {
   ),
 
   description: toString(row.description),
+  ingredients: toOptionalText(row.ingredients),
+  benefits: toOptionalText(row.benefits ?? row.key_benefits),
+  tags: toStringArray(row.tags),
+  warnings: toOptionalText(row.warnings),
 stock: toNumber(row.stock),
   inStock:
     typeof row.stock === 'number'
@@ -128,6 +155,7 @@ weight: toString(row.weight),
 
 export type GetProductsOptions = {
   category?: string;
+  subtype?: string;
   featuredOnly?: boolean;
   search?: string;
   offset?: number;
@@ -136,6 +164,7 @@ export type GetProductsOptions = {
 
 export const getProducts = async ({
   category,
+  subtype = "",
   featuredOnly = false,
   search = "",
   offset = 0,
@@ -156,6 +185,10 @@ export const getProducts = async ({
 
   if (category) {
     query = query.eq("category", category);
+  }
+
+  if (subtype.trim()) {
+    query = query.ilike("subtype", `%${subtype.trim()}%`);
   }
 
   if (featuredOnly) {
@@ -195,18 +228,34 @@ export const getFeaturedProducts = async () => {
   return products;
 };
 
-export const getProductBySlug = async (id: string) => {
+export const getProductBySlug = async (identifier: string) => {
   if (!supabase) {
     throw new Error("Something went wrong..");
   }
 
-  const { data, error } = await supabase
+  const { data: productBySlug, error: slugError } = await supabase
     .from("products")
     .select("*")
-    .eq("slug", id)
+    .eq("slug", identifier)
     .maybeSingle();
-  if (error) throw error;
- 
+  if (slugError) throw slugError;
 
-  return data ? mapProduct(data) : null;
+  if (productBySlug) return mapProduct(productBySlug);
+
+  const isProductId =
+    /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(
+      identifier,
+    );
+
+  if (!isProductId) return null;
+
+  const { data: productById, error: idError } = await supabase
+    .from("products")
+    .select("*")
+    .eq("id", identifier)
+    .maybeSingle();
+
+  if (idError) throw idError;
+
+  return productById ? mapProduct(productById) : null;
 };

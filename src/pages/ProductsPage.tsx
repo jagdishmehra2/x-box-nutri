@@ -91,12 +91,12 @@ const ProductsPage = () => {
   useEffect(() => {
     setDocumentMeta({
       title: isFeaturedView
-        ? 'Featured Products | X-Box Nutrition'
+        ? 'Featured Products | NutriStack'
         : selectedCategory
-          ? `${selectedCategory.title} | X-Box Nutrition`
-          : 'Shop Supplements | X-Box Nutrition',
+          ? `${selectedCategory.title} | NutriStack`
+          : 'Shop Supplements | NutriStack',
       description: isFeaturedView
-        ? 'Browse all featured supplements from X-Box Nutrition.'
+        ? 'Browse all featured supplements from NutriStack.'
         : 'Browse whey protein, creatine, pre-workout, vitamins, and premium gym supplements.',
     })
 

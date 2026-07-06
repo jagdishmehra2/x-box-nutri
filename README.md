@@ -71,4 +71,4 @@ export default defineConfig([
   },
 ])
 ```
-# x-box-nutri
+# NutriStack-nutri

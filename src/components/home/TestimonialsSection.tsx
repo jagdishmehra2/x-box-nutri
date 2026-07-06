@@ -94,7 +94,7 @@ export const TestimonialsSection = () => {
           </h2>
 
           <p className="mt-3 text-zinc-400">
-            Real feedback from customers who use X-Box Nutrition to support
+            Real feedback from customers who use NutriStack to support
             their training.
           </p>
         </div>

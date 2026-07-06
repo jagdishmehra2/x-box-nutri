@@ -14,7 +14,7 @@ const AuthCallbackPage = () => {
 
   useEffect(() => {
     setDocumentMeta({
-      title: 'Signing In | X-Box Nutrition',
+      title: 'Signing In | NutriStack',
       description: 'Completing secure Google sign-in.',
     })
   }, [])

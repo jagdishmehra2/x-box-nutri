@@ -24,7 +24,7 @@ const subtotal = items.reduce(
 
   useEffect(() => {
     setDocumentMeta({
-      title: 'Your Cart | X-Box Nutrition',
+      title: 'Your Cart | NutriStack',
       description: 'Review your selected supplements and proceed to checkout.',
     })
   }, [])

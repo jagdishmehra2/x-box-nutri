@@ -7,7 +7,7 @@ export interface FaqItem {
 export const faqs: FaqItem[] = [
   {
     id: 1,
-    question: "Are all products sold by X-Box Nutrition authentic?",
+    question: "Are all products sold by NutriStack authentic?",
     answer:
       "Yes. We source our supplements from trusted brands and authorized suppliers so you receive genuine, quality-checked products.",
   },

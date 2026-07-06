@@ -57,14 +57,14 @@ const ProductDetailPage = () => {
 
         if (!selectedProduct) {
           setDocumentMeta({
-            title: "Product Not Found | X-Box Nutrition",
+            title: "Product Not Found | NutriStack",
             description: "The product you are looking for could not be found.",
           });
           return;
         }
 
         setDocumentMeta({
-          title: `${selectedProduct.name} | X-Box Nutrition`,
+          title: `${selectedProduct.name} | NutriStack`,
           description: selectedProduct.shortDescription,
         });
       } catch (error) {

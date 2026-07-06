@@ -19,7 +19,7 @@ const OrderSuccessPage = () => {
 
   useEffect(() => {
     setDocumentMeta({
-      title: 'Order Success | X-Box Nutrition',
+      title: 'Order Success | NutriStack',
       description: 'Your order has been placed successfully.',
     })
   }, [])

@@ -50,9 +50,9 @@ const RegisterPage = () => {
 
   useEffect(() => {
     setDocumentMeta({
-      title: 'Register | X-Box Nutrition',
+      title: 'Register | NutriStack',
       description:
-        'Create your X-Box Nutrition account for faster checkout and order tracking.',
+        'Create your NutriStack account for faster checkout and order tracking.',
     })
   }, [])
 

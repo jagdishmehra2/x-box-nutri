@@ -1,21 +1,22 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Pencil, Trash2, Plus } from "lucide-react";
 import { toast } from "react-hot-toast";
 import { useNavigate } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../hooks/useRedux";
 import { Button } from "../components/common/Button";
 import { EmptyState } from "../components/common/EmptyState";
+import { PaymentLoadingOverlay } from "../components/checkout/PaymentLoadingOverlay";
 import { clearCart } from "../features/cart/cartSlice";
 import { supabase } from "../lib/supabase";
 import {
+  createRazorpayOrder,
   openRazorpayCheckout,
-  type RazorpayFailureResponse,
+  reportRazorpayPaymentFailure,
+  verifyRazorpayPayment,
 } from "../services/razorpay";
 import { formatCurrency } from "../utils/currency";
 import { setDocumentMeta } from "../utils/seo";
 import { DeliveryAddressForm, type DeliveryAddress } from "src/pages/Address";
-
-const RazorpayKeyId = import.meta.env.VITE_RAZORPAY_KEY_ID;
 
 const CheckoutPage = () => {
   const navigate = useNavigate();
@@ -34,7 +35,12 @@ const CheckoutPage = () => {
   );
   const [isLoadingAddress, setIsLoadingAddress] = useState(true);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
+  const [paymentLoading, setPaymentLoading] = useState(false);
+  const [paymentSuccessRedirect, setPaymentSuccessRedirect] = useState(false);
+  const [redirectCountdown, setRedirectCountdown] = useState(10);
   const [showAddAddressForm, setShowAddAddressForm] = useState(false);
+  const paymentAttemptInFlightRef = useRef(false);
+  const paymentInteractionLocked = paymentLoading || paymentSuccessRedirect;
   const subtotal = useMemo(() => {
     return items.reduce(
       (total, item) =>
@@ -51,8 +57,6 @@ const CheckoutPage = () => {
   }, [items]);
 
   const totalSavings = totalMrp - subtotal;
-  const amountInPaise = Math.round(subtotal * 100);
-
   useEffect(() => {
     const loadAddress = async () => {
       if (!user?.id || !supabase) {
@@ -80,10 +84,41 @@ const CheckoutPage = () => {
   }, [user]);
   useEffect(() => {
     setDocumentMeta({
-      title: "Checkout | X-Box Nutrition",
+      title: "Checkout | NutriStack",
       description: "Complete your payment securely with Razorpay Checkout.",
     });
   }, []);
+  useEffect(() => {
+    if (!paymentSuccessRedirect) return;
+
+    const timer = window.setInterval(() => {
+      setRedirectCountdown((current) => Math.max(0, current - 1));
+    }, 1000);
+
+    return () => window.clearInterval(timer);
+  }, [paymentSuccessRedirect]);
+  useEffect(() => {
+    if (paymentSuccessRedirect && redirectCountdown === 0) {
+      navigate("/orders", { replace: true });
+    }
+  }, [navigate, paymentSuccessRedirect, redirectCountdown]);
+  useEffect(() => {
+    if (!paymentInteractionLocked) return;
+
+    const previousOverflow = document.body.style.overflow;
+    const preventLeaving = (event: BeforeUnloadEvent) => {
+      event.preventDefault();
+      event.returnValue = "";
+    };
+
+    document.body.style.overflow = "hidden";
+    window.addEventListener("beforeunload", preventLeaving);
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.removeEventListener("beforeunload", preventLeaving);
+    };
+  }, [paymentInteractionLocked]);
   const handleDeleteAddress = async (id: string) => {
     if (!supabase) return;
 
@@ -110,56 +145,7 @@ const CheckoutPage = () => {
 
     toast.success("Address deleted successfully.");
   };
-  // const saveOrderInSupabase = async (
-  //   paymentId: string,
-  //   razorpayOrderId?: string,
-  // ) => {
-  //   if (!supabase) {
-  //     throw new Error("Something went wrong. for order storage.");
-  //   }
-
-  //   if (!user?.id) {
-  //     throw new Error("You must be logged in to place an order.");
-  //   }
-
-  //   const { data: order, error: orderError } = await supabase
-  //     .from("orders")
-  //     .insert({
-  //       user_id: user.id,
-  //       total_amount: subtotal,
-  //       payment_status: "paid",
-  //       order_status: "confirmed",
-  //       razorpay_payment_id: paymentId,
-  //       razorpay_order_id: razorpayOrderId ?? null,
-  //     })
-  //     .select("id, created_at")
-  //     .single();
-
-  //   if (orderError || !order) {
-  //     throw new Error(orderError?.message ?? "Unable to create order record.");
-  //   }
-
-  //   const orderItemsPayload = items.map((item) => ({
-  //     order_id: order.id,
-  //     product_id: item.product.id,
-  //     quantity: item.quantity,
-  //     price: item.product.discountPrice ?? item.product.price,
-  //   }));
-
-  //   const { error: orderItemsError } = await supabase
-  //     .from("order_items")
-  //     .insert(orderItemsPayload);
-
-  //   if (orderItemsError) {
-  //     throw new Error(orderItemsError.message);
-  //   }
-
-  //   return order;
-  // };
-  const saveOrderInSupabase = async (
-    paymentId?: string,
-    razorpayOrderId?: string,
-  ) => {
+  const saveOrderInSupabase = async () => {
     if (!supabase) {
       throw new Error("Something Went Wrong");
     }
@@ -172,26 +158,19 @@ const CheckoutPage = () => {
       throw new Error("Please select a delivery address.");
     }
 
-    const paymentStatus = paymentMethod === "online" ? "paid" : "pending";
-
     const deliveryEstimate =
       selectedAddress.pincode === "262308"
         ? "Same Day Delivery"
         : "2-3 Business Days";
 
-    // Create Order
     const { data: order, error: orderError } = await supabase
       .from("orders")
       .insert({
         user_id: user.id,
-
         total_amount: subtotal,
-
-        payment_method: paymentMethod,
-        payment_status: paymentStatus,
-
+        payment_method: "cod",
+        payment_status: "pending",
         order_status: "confirmed",
-
         shipping_name: selectedAddress.full_name,
         shipping_phone: selectedAddress.phone,
         shipping_address: selectedAddress.address,
@@ -201,16 +180,6 @@ const CheckoutPage = () => {
         shipping_pincode: selectedAddress.pincode,
         address_id: selectedAddress.id,
         delivery_estimate: deliveryEstimate,
-
-        // razorpay_payment_id:
-        //   paymentMethod === "online"
-        //     ? paymentId ?? null
-        //     : null,
-
-        // razorpay_order_id:
-        //   paymentMethod === "online"
-        //     ? razorpayOrderId ?? null
-        //     : null,
       })
       .select("id, created_at")
       .single();
@@ -219,12 +188,9 @@ const CheckoutPage = () => {
       throw new Error(orderError?.message ?? "Unable to create order.");
     }
 
-    // Create Order Items
     const orderItemsPayload = items.map((item) => ({
       order_id: order.id,
-
       product_id: item.product.id,
-
       product_name: item.product.name,
       product_image: item.product.image,
       product_brand: item.product.brand,
@@ -247,20 +213,12 @@ const CheckoutPage = () => {
       throw new Error(orderItemsError.message);
     }
 
-    // Create Payment Record
     const { error: paymentError } = await supabase.from("payments").insert({
       order_id: order.id,
       user_id: user.id,
       amount: subtotal,
-
-      payment_method: paymentMethod,
-      payment_status: paymentStatus,
-
-      razorpay_payment_id:
-        paymentMethod === "online" ? (paymentId ?? null) : null,
-
-      razorpay_order_id:
-        paymentMethod === "online" ? (razorpayOrderId ?? null) : null,
+      payment_method: "cod",
+      payment_status: "pending",
     });
 
     if (paymentError) {
@@ -269,107 +227,9 @@ const CheckoutPage = () => {
 
     return order;
   };
-  const handlePaymentFailure = (response: RazorpayFailureResponse) => {
-    const message =
-      response.error?.description ??
-      "Payment failed. Please try again with a different method.";
-
-    toast.error(message);
-    setIsProcessingPayment(false);
-  };
-
-  // const handlePayNow = async () => {
-  //   if (!selectedAddress) {
-  //     toast.error("Please select a delivery address.");
-  //     return;
-  //   }
-  //   if (!items.length) {
-  //     toast.error("Your cart is empty.");
-  //     return;
-  //   }
-
-  //   if (!RazorpayKeyId) {
-  //     toast.error("Razorpay key is missing. Set VITE_RAZORPAY_KEY_ID in .env.");
-  //     return;
-  //   }
-
-  //   if (!user?.id) {
-  //     toast.error("Please login before checkout.");
-  //     navigate("/login", {
-  //       replace: true,
-  //       state: { from: { pathname: "/checkout" } },
-  //     });
-  //     return;
-  //   }
-
-  //   if (amountInPaise < 100) {
-  //     toast.error("Minimum payment amount is ₹1.00.");
-  //     return;
-  //   }
-
-  //   setIsProcessingPayment(true);
-
-  //   try {
-  //     await openRazorpayCheckout({
-  //       key: RazorpayKeyId,
-  //       amount: amountInPaise,
-  //       currency: "INR",
-  //       name: "X-BOX NUTRITION",
-  //       description: `Payment for ${items.length} item${items.length > 1 ? "s" : ""}`,
-  //       prefill: {
-  //         email: user.email,
-  //       },
-  //       notes: {
-  //         app: "x-box-nutrition",
-  //         user_id: user.id,
-  //       },
-  //       onDismiss: () => {
-  //         toast("Payment popup closed.");
-  //         setIsProcessingPayment(false);
-  //       },
-  //       onFailure: handlePaymentFailure,
-  //       onSuccess: async (paymentResponse) => {
-  //         try {
-  //           const savedOrder = await saveOrderInSupabase(
-  //             paymentResponse.razorpay_payment_id,
-  //             paymentResponse.razorpay_order_id,
-  //           );
-
-  //           dispatch(clearCart());
-  //           toast.success("Payment successful. Order created.");
-
-  //           navigate("/order-success", {
-  //             replace: true,
-  //             state: {
-  //               orderId: savedOrder.id,
-  //               amount: subtotal,
-  //               paymentId: paymentResponse.razorpay_payment_id,
-  //               createdAt: savedOrder.created_at,
-  //             },
-  //           });
-  //         } catch (error) {
-  //           const message =
-  //             error instanceof Error
-  //               ? error.message
-  //               : "Payment succeeded but order saving failed.";
-
-  //           toast.error(message);
-  //         } finally {
-  //           setIsProcessingPayment(false);
-  //         }
-  //       },
-  //     });
-  //   } catch (error) {
-  //     const message =
-  //       error instanceof Error
-  //         ? error.message
-  //         : "Unable to open checkout. Please try again.";
-
-  //     toast.error(message);
-  //     setIsProcessingPayment(false);
-  //   }
-  // };
   const handlePayNow = async () => {
+    if (paymentAttemptInFlightRef.current) return;
+
     if (!items.length) {
       toast.error("Your cart is empty.");
       return;
@@ -385,7 +245,8 @@ const CheckoutPage = () => {
       return;
     }
 
-    // ✅ CASH ON DELIVERY
+    paymentAttemptInFlightRef.current = true;
+
     if (paymentMethod === "cod") {
       try {
         setIsProcessingPayment(true);
@@ -411,20 +272,57 @@ const CheckoutPage = () => {
         );
       } finally {
         setIsProcessingPayment(false);
+        paymentAttemptInFlightRef.current = false;
       }
 
       return;
     }
 
-    // ✅ ONLINE PAYMENT
+    setIsProcessingPayment(true);
+    setPaymentLoading(true);
+
     try {
-      setIsProcessingPayment(true);
+      const paymentOrder = await createRazorpayOrder({
+        addressId: selectedAddress.id,
+        items: items.map((item) => ({
+          productId: item.product.id,
+          quantity: item.quantity,
+        })),
+      });
+      let paymentResultHandled = false;
+
+      const markPaymentFailed = async (failureReason: string) => {
+        if (paymentResultHandled) return;
+        paymentResultHandled = true;
+        setPaymentLoading(false);
+
+        try {
+          await reportRazorpayPaymentFailure({
+            local_order_id: paymentOrder.localOrderId,
+            razorpay_order_id: paymentOrder.razorpayOrderId,
+            payment_failed: true,
+            failure_reason: failureReason,
+          });
+
+          toast.error("Payment failed. Please try again.");
+        } catch (error) {
+          toast.error(
+            error instanceof Error
+              ? error.message
+              : "Unable to update failed payment.",
+          );
+        } finally {
+          setIsProcessingPayment(false);
+          paymentAttemptInFlightRef.current = false;
+        }
+      };
 
       await openRazorpayCheckout({
-        key: RazorpayKeyId,
-        amount: amountInPaise,
-        currency: "INR",
-        name: "X-BOX NUTRITION",
+        key: paymentOrder.keyId,
+        orderId: paymentOrder.razorpayOrderId,
+        amount: paymentOrder.amount,
+        currency: paymentOrder.currency,
+        name: "NutriStack",
         description: `Payment for ${items.length} item${items.length > 1 ? "s" : ""}`,
 
         prefill: {
@@ -432,52 +330,61 @@ const CheckoutPage = () => {
         },
 
         notes: {
-          app: "x-box-nutrition",
+          app: "NutriStack",
           user_id: user.id,
         },
 
         onDismiss: () => {
-          toast("Payment popup closed.");
-          setIsProcessingPayment(false);
+          void markPaymentFailed("Payment cancelled by user.");
         },
 
-        onFailure: handlePaymentFailure,
+        onFailure: (response) => {
+          void markPaymentFailed(
+            response.error?.description ??
+              response.error?.reason ??
+              "Payment failed in Razorpay Checkout.",
+          );
+        },
 
         onSuccess: async (paymentResponse) => {
-          try {
-            const savedOrder = await saveOrderInSupabase(
-              paymentResponse.razorpay_payment_id,
-              paymentResponse.razorpay_order_id,
-            );
+          paymentResultHandled = true;
 
+          try {
+            await verifyRazorpayPayment({
+              ...paymentResponse,
+              local_order_id: paymentOrder.localOrderId,
+            });
+
+            setRedirectCountdown(10);
+            setPaymentLoading(false);
+            setPaymentSuccessRedirect(true);
             dispatch(clearCart());
 
             toast.success("Payment successful.");
-
-            navigate("/order-success", {
-              replace: true,
-              state: {
-                orderId: savedOrder.id,
-                amount: subtotal,
-                paymentMethod: "Online",
-                paymentId: paymentResponse.razorpay_payment_id,
-                createdAt: savedOrder.created_at,
-              },
-            });
+          } catch (error) {
+            setPaymentLoading(false);
+            toast.error(
+              error instanceof Error
+                ? error.message
+                : "Payment verification failed.",
+            );
           } finally {
             setIsProcessingPayment(false);
+            paymentAttemptInFlightRef.current = false;
           }
         },
       });
     } catch (error) {
+      setPaymentLoading(false);
       toast.error(
         error instanceof Error ? error.message : "Unable to open Razorpay.",
       );
 
       setIsProcessingPayment(false);
+      paymentAttemptInFlightRef.current = false;
     }
   };
-  if (!items.length) {
+  if (!items.length && !paymentSuccessRedirect) {
     return (
       <section className="mx-auto max-w-3xl px-4 py-14 sm:px-6 lg:px-8">
         <EmptyState
@@ -490,7 +397,19 @@ const CheckoutPage = () => {
     );
   }
   return (
-    <section className="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8">
+    <>
+      {paymentLoading && <PaymentLoadingOverlay mode="opening" />}
+      {paymentSuccessRedirect && (
+        <PaymentLoadingOverlay
+          mode="success"
+          countdown={redirectCountdown}
+        />
+      )}
+      <section
+        className="mx-auto max-w-4xl px-4 py-10 sm:px-6 lg:px-8"
+        inert={paymentInteractionLocked}
+        aria-hidden={paymentInteractionLocked}
+      >
       <header>
         <h1 className="text-4xl font-semibold text-white">Checkout</h1>
         <p className="mt-2 text-zinc-400">
@@ -745,15 +664,10 @@ const CheckoutPage = () => {
               Select a Delivery Address
             </Button>
           )}
-
-          <p className="mt-3 text-xs text-zinc-500">
-            MVP note: payment signature verification must be done on backend
-            (recommended via Supabase Edge Function) before marking orders as
-            paid in production.
-          </p>
         </article>
       )}
-    </section>
+      </section>
+    </>
   );
 };
 

@@ -23,9 +23,9 @@ const OrdersPage = () => {
 
   useEffect(() => {
     setDocumentMeta({
-      title: "Orders | X-Box Nutrition",
+      title: "Orders | NutriStack",
       description:
-        "Track your previous and current X-Box Nutrition orders.",
+        "Track your previous and current NutriStack orders.",
     });
   }, []);
 
