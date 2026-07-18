@@ -60,12 +60,12 @@ export const AuthPromptModal = ({
 
   return (
     <div
-      className="auth-modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/55 px-4 py-6 backdrop-blur-[2px]"
+      className="auth-modal-backdrop fixed inset-0 z-50 flex items-center justify-center bg-black/55 px-3 py-5 backdrop-blur-[2px] sm:px-4 sm:py-6"
       role="presentation"
       onClick={onClose}
     >
       <div
-        className="auth-modal-panel w-full max-w-md rounded-[18px] bg-white px-6 py-7 text-zinc-950 shadow-2xl shadow-black/30 sm:px-8"
+        className="auth-modal-panel w-full max-w-md rounded-2xl bg-white px-5 py-6 text-zinc-950 shadow-2xl shadow-black/30 sm:px-8 sm:py-7"
         role="dialog"
         aria-modal="true"
         aria-labelledby="auth-modal-title"
@@ -74,30 +74,30 @@ export const AuthPromptModal = ({
         <div className="flex items-start justify-between gap-4">
           <h2
             id="auth-modal-title"
-            className="text-4xl font-semibold leading-none text-zinc-950"
+            className="text-3xl font-semibold leading-none text-zinc-950 sm:text-4xl"
           >
             Sign in
           </h2>
 
           <button
             type="button"
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-zinc-700 transition hover:bg-zinc-100 hover:text-zinc-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#9d3f67]"
+            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-zinc-700 transition hover:bg-zinc-100 hover:text-zinc-950 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#9d3f67] sm:h-10 sm:w-10"
             aria-label="Close sign in popup"
             onClick={onClose}
           >
-            <X className="h-7 w-7" />
+            <X className="h-6 w-6 sm:h-7 sm:w-7" />
           </button>
         </div>
 
-        <div className="mt-8 ml-20">
+        <div className="mt-7 flex justify-center sm:mt-8">
           <GoogleAuthButton
-            className="mx-auto h-11 w-auto min-w-56 rounded-lg border border-[#9d3f67] px-4 text-sm font-semibold text-zinc-800 hover:bg-zinc-50 focus-visible:outline-[#9d3f67] [&_svg]:h-5 [&_svg]:w-5"
+            className="h-11 w-full max-w-72 rounded-lg border border-[#9d3f67] px-4 text-sm font-semibold text-zinc-800 hover:bg-zinc-50 focus-visible:outline-[#9d3f67] sm:w-auto sm:min-w-56 [&_svg]:h-5 [&_svg]:w-5"
             isLoading={isGoogleSubmitting}
             onClick={handleGoogleSignIn}
           />
         </div>
 
-        <p className="mx-auto mt-6 max-w-sm text-center text-sm leading-6 text-zinc-700">
+        <p className="mx-auto mt-5 max-w-sm text-center text-sm leading-6 text-zinc-700 sm:mt-6">
           By continuing, you agree to our company's{' '}
           <Link
             to="/terms-and-privacy#terms"
