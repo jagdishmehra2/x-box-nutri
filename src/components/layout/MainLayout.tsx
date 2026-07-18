@@ -82,9 +82,9 @@ export const MainLayout = () => {
   }, [dispatch, isAuthenticated, isAuthModalOpen])
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100">
+    <div className="min-h-screen overflow-x-hidden bg-zinc-950 text-zinc-100">
       <Navbar />
-      <main>
+      <main className="min-w-0 overflow-x-hidden">
         <Outlet />
       </main>
       <Footer />

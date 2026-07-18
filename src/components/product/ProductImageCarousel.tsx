@@ -36,8 +36,8 @@ export const ProductImageCarousel = ({
   }
 
   return (
-    <div>
-      <div className="relative aspect-square w-full overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900">
+    <div className="min-w-0 max-w-full overflow-hidden">
+      <div className="relative mx-auto aspect-[4/3] w-full max-w-full overflow-hidden rounded-lg border border-zinc-800 bg-zinc-900 sm:aspect-square sm:max-w-lg">
         <img
           key={images[activeIndex]}
           src={images[activeIndex]}
@@ -50,7 +50,7 @@ export const ProductImageCarousel = ({
             event.currentTarget.onerror = null
             event.currentTarget.src = PLACEHOLDER_IMAGE
           }}
-          className="h-full w-full animate-in fade-in object-contain duration-300"
+          className="h-full w-full max-w-full animate-in fade-in object-contain duration-300"
         />
 
         {hasMultipleImages ? (
@@ -58,7 +58,7 @@ export const ProductImageCarousel = ({
             <button
               type="button"
               onClick={showPreviousImage}
-              className="absolute left-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-zinc-700 bg-zinc-950/85 text-white shadow-lg transition hover:border-lime-400 hover:text-lime-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lime-400"
+              className="absolute left-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-zinc-700 bg-zinc-950/85 text-white shadow-lg transition hover:border-lime-400 hover:text-lime-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lime-400 sm:left-3 sm:h-10 sm:w-10"
               aria-label="Show previous product image"
               title="Previous image"
             >
@@ -68,7 +68,7 @@ export const ProductImageCarousel = ({
             <button
               type="button"
               onClick={showNextImage}
-              className="absolute right-3 top-1/2 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-zinc-700 bg-zinc-950/85 text-white shadow-lg transition hover:border-lime-400 hover:text-lime-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lime-400"
+              className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-zinc-700 bg-zinc-950/85 text-white shadow-lg transition hover:border-lime-400 hover:text-lime-400 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-lime-400 sm:right-3 sm:h-10 sm:w-10"
               aria-label="Show next product image"
               title="Next image"
             >
@@ -86,13 +86,16 @@ export const ProductImageCarousel = ({
       </div>
 
       {hasMultipleImages ? (
-        <div className="mt-3 flex gap-2 overflow-x-auto pb-1" aria-label="Choose product image">
+        <div
+          className="mt-3 flex max-w-full gap-2 overflow-x-auto overscroll-x-contain pb-2"
+          aria-label="Choose product image"
+        >
           {images.map((image, index) => (
             <button
               key={`${image}-${index}`}
               type="button"
               onClick={() => setActiveIndex(index)}
-              className={`h-16 w-16 shrink-0 overflow-hidden rounded-lg border bg-zinc-900 p-1 transition ${
+              className={`h-14 w-14 shrink-0 overflow-hidden rounded-lg border bg-zinc-900 p-1 transition sm:h-16 sm:w-16 ${
                 index === activeIndex
                   ? 'border-lime-400'
                   : 'border-zinc-800 hover:border-zinc-600'

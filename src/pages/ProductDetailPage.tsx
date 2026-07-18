@@ -26,6 +26,32 @@ type Review = {
   created_at: string;
 };
 
+const formatDescriptionParagraphs = (description: string) => {
+  const explicitParagraphs = description
+    .split(/\n+/)
+    .map((paragraph) => paragraph.trim())
+    .filter(Boolean);
+
+  if (explicitParagraphs.length > 1) return explicitParagraphs;
+
+  const normalizedDescription = description.replace(/\s+/g, " ").trim();
+  const sentences =
+    normalizedDescription.match(/[^.!?]+[.!?]+(?:\s|$)|[^.!?]+$/g) ?? [];
+  const cleanSentences = sentences
+    .map((sentence) => sentence.trim())
+    .filter(Boolean);
+
+  if (cleanSentences.length <= 2) return normalizedDescription ? [normalizedDescription] : [];
+
+  const paragraphs: string[] = [];
+
+  for (let index = 0; index < cleanSentences.length; index += 2) {
+    paragraphs.push(cleanSentences.slice(index, index + 2).join(" "));
+  }
+
+  return paragraphs;
+};
+
 const ProductDetailPage = () => {
   const { id = "" } = useParams();
   const dispatch = useAppDispatch();
@@ -207,25 +233,28 @@ const ProductDetailPage = () => {
 
   const displayRating = averageRating.toFixed(1);
   const displayReviewCount = formatReviewCount(reviewCount);
+  const descriptionParagraphs = formatDescriptionParagraphs(product.description);
   return (
-    <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
-      <div className="grid gap-8 lg:grid-cols-2">
-        <ProductImageCarousel
-          key={product.id}
-          imageUrls={product.images}
-          fallbackImage={product.image}
-          productName={product.name}
-        />
+    <section className="mx-auto w-full max-w-[100vw] overflow-hidden px-3 py-5 sm:px-6 sm:py-10 lg:max-w-6xl lg:px-8">
+      <div className="grid w-full min-w-0 max-w-full grid-cols-1 gap-6 overflow-hidden lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)] lg:gap-10">
+        <div className="min-w-0 max-w-full overflow-hidden">
+          <ProductImageCarousel
+            key={product.id}
+            imageUrls={product.images}
+            fallbackImage={product.image}
+            productName={product.name}
+          />
+        </div>
 
-        <article>
-          <p className="text-sm uppercase tracking-wide text-lime-400">
+        <article className="min-w-0 max-w-full overflow-hidden">
+          <p className="text-xs uppercase tracking-wide text-lime-400 sm:text-sm">
             {product.category.replace("-", " ")}
           </p>
-          <h1 className="mt-2 text-4xl font-semibold text-white">
+          <h1 className="mt-2 max-w-full break-words text-2xl font-semibold leading-tight text-white [overflow-wrap:anywhere] sm:text-4xl">
             {product.name}
           </h1>
 
-          <div className="mt-3 flex items-center gap-2 text-sm text-zinc-300">
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-sm text-zinc-300">
             <Star
               className={`h-4 w-4 ${
                 reviewCount > 0
@@ -241,62 +270,55 @@ const ProductDetailPage = () => {
             </span>
           </div>
 
-          <div className="mt-6 rounded-2xl border border-zinc-800 bg-zinc-900/50 p-4">
-            <h3 className="mb-3 text-lg font-semibold text-white">
+          <div className="mt-5 max-w-full overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 sm:mt-6 sm:rounded-2xl">
+            <h3 className="mb-3 text-base font-semibold text-white sm:text-lg">
               Product Details
             </h3>
 
-            <div className="grid grid-cols-2 gap-3 text-sm">
+            <dl className="grid min-w-0 gap-3 text-sm sm:grid-cols-[8rem_minmax(0,1fr)]">
               {product.brand && (
                 <>
-                  <span className="text-zinc-500">Brand</span>
+                  <dt className="text-zinc-500">Brand</dt>
 
-                  <span className="text-white">{product.brand}</span>
+                  <dd className="min-w-0 break-words text-white [overflow-wrap:anywhere]">{product.brand}</dd>
                 </>
               )}
 
               {product.subtype && (
                 <>
-                  <span className="text-zinc-500">Type</span>
+                  <dt className="text-zinc-500">Type</dt>
 
-                  <span className="text-white">{product.subtype}</span>
+                  <dd className="min-w-0 break-words text-white [overflow-wrap:anywhere]">{product.subtype}</dd>
                 </>
               )}
 
               {product.flavor && (
                 <>
-                  <span className="text-zinc-500">Flavor</span>
+                  <dt className="text-zinc-500">Flavor</dt>
 
-                  <span className="text-white">{product.flavor}</span>
+                  <dd className="min-w-0 break-words text-white [overflow-wrap:anywhere]">{product.flavor}</dd>
                 </>
               )}
 
               {product.weight && (
                 <>
-                  <span className="text-zinc-500">Weight</span>
+                  <dt className="text-zinc-500">Weight</dt>
 
-                  <span className="text-white">{product.weight}</span>
+                  <dd className="min-w-0 break-words text-white [overflow-wrap:anywhere]">{product.weight}</dd>
                 </>
               )}
-              {product.description && (
-                <>
-                  <span className="text-zinc-500">Description</span>
-
-                  <span className="text-white">{product.description}</span>
-                </>
-              )}
-            </div>
+            </dl>
           </div>
 
-          <div className="mt-6">
+          <div className="mt-5 sm:mt-6">
             {product.discountPrice ? (
               <>
-                <div className="flex items-center gap-3">
-                  <p className="text-3xl font-semibold text-lime-400">
+                <div className="flex flex-wrap items-end gap-x-3 gap-y-1">
+                  <p className="text-2xl font-semibold text-lime-400 sm:text-3xl">
                     {formatCurrency(product.discountPrice)}
                   </p>
 
-                  <p className="text-lg text-zinc-500 line-through">
+                  <p className="text-base text-zinc-500 line-through sm:text-lg">
                     {formatCurrency(product.price)}
                   </p>
                 </div>
@@ -310,36 +332,56 @@ const ProductDetailPage = () => {
                 </p>
               </>
             ) : (
-              <p className="text-3xl font-semibold text-lime-400">
+              <p className="text-2xl font-semibold text-lime-400 sm:text-3xl">
                 {formatCurrency(product.price)}
               </p>
             )}
           </div>
 
-          <div className="mt-8 flex flex-wrap items-center gap-3">
+          <div className="mt-6 grid gap-3 sm:mt-8 sm:flex sm:flex-wrap sm:items-center">
             <Button
               size="lg"
+              className="w-full sm:w-auto"
               onClick={handleAddToCart}
               disabled={!product.inStock}
               aria-label={`Add ${product.name} to cart`}
             >
               {product.inStock ? "Add To Cart" : "Out of Stock"}
             </Button>
-            <Link to="/cart">
-              <Button size="lg" variant="secondary">
+            <Link to="/cart" className="w-full sm:w-auto">
+              <Button size="lg" variant="secondary" className="w-full sm:w-auto">
                 Go To Cart
               </Button>
             </Link>
           </div>
+
+          {descriptionParagraphs.length > 0 ? (
+            <section className="mt-6 max-w-full overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 sm:mt-8 sm:rounded-2xl sm:p-5">
+              <h2 className="text-lg font-semibold text-white sm:text-xl">
+                Product Description
+              </h2>
+
+              <div className="mt-4 space-y-3 text-sm leading-7 text-zinc-300 sm:text-base">
+                {descriptionParagraphs.map((paragraph, index) => (
+                  <p
+                    key={`${paragraph}-${index}`}
+                    className="break-words [overflow-wrap:anywhere]"
+                  >
+                    {paragraph}
+                  </p>
+                ))}
+              </div>
+            </section>
+          ) : null}
         </article>
       </div>
 
-      <div className="mt-12 rounded-2xl border border-zinc-800 bg-zinc-900/50 p-5">
-        <h2 className="text-2xl font-semibold text-white">Customer Reviews</h2>
+      <div className="mt-8 max-w-full overflow-hidden rounded-xl border border-zinc-800 bg-zinc-900/50 p-4 sm:mt-12 sm:rounded-2xl sm:p-5">
+        <h2 className="text-xl font-semibold text-white sm:text-2xl">Customer Reviews</h2>
 
         {canReview ? (
           <form onSubmit={handleSubmitReview} className="mt-6 space-y-4">
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <span className="text-sm font-medium text-zinc-300">Rating:</span>
 
               <div
@@ -357,7 +399,7 @@ const ProductDetailPage = () => {
                     aria-pressed={reviewRating === rating}
                   >
                     <Star
-                      className={`h-6 w-6 ${
+                      className={`h-5 w-5 sm:h-6 sm:w-6 ${
                         rating <= reviewRating
                           ? "fill-lime-400 text-lime-400"
                           : "fill-zinc-800 text-zinc-600"
@@ -378,7 +420,7 @@ const ProductDetailPage = () => {
               className="min-h-28 w-full rounded-lg border border-zinc-700 bg-zinc-950 px-3 py-2 text-white placeholder:text-zinc-500"
             />
 
-            <Button type="submit" disabled={isSubmittingReview}>
+            <Button type="submit" className="w-full sm:w-auto" disabled={isSubmittingReview}>
               {isSubmittingReview ? "Submitting..." : "Submit Review"}
             </Button>
           </form>
@@ -386,15 +428,15 @@ const ProductDetailPage = () => {
           <p className="mt-4 text-sm text-zinc-400">{reviewReason}</p>
         )}
 
-        <div className="mt-8 max-h-[420px] space-y-4 overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-900">
+        <div className="mt-6 max-h-[420px] space-y-4 overflow-y-auto pr-1 sm:mt-8 sm:pr-2 scrollbar-thin scrollbar-thumb-zinc-700 scrollbar-track-zinc-900">
           {reviews.length ? (
             reviews.map((review) => (
               <article
                 key={review.id}
                 className="rounded-xl border border-zinc-800 bg-zinc-950 p-4"
               >
-                <div className="flex items-center justify-between gap-3">
-                  <p className="font-semibold text-white">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
+                  <p className="break-words font-semibold text-white">
                     {review.customer_name}
                   </p>
 
@@ -412,7 +454,7 @@ const ProductDetailPage = () => {
                   </div>
                 </div>
 
-                <p className="mt-3 text-sm leading-6 text-zinc-300">
+                <p className="mt-3 break-words text-sm leading-6 text-zinc-300 [overflow-wrap:anywhere]">
                   {review.comment}
                 </p>
               </article>
