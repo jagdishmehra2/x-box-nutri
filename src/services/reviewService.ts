@@ -31,6 +31,8 @@ export const getProductReviews = async (
   page = 1,
   pageSize = 10,
 ) => {
+  if (!supabase) throw new Error("Something went wrong..");
+
   const from = (page - 1) * pageSize;
   const to = from + pageSize - 1;
 

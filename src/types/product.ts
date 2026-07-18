@@ -29,7 +29,7 @@ export interface Product {
   tags?: string[]
   warnings?: string | string[]
 
-stock: number;
+  stock: number
   inStock: boolean
 
   featured?: boolean

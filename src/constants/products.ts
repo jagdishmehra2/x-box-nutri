@@ -6,8 +6,8 @@ export const products: Product[] = [
     slug: 'isolate-whey-vanilla',
     name: 'Isolate Whey Vanilla',
     category: 'whey-protein',
-    price: 64.99,
-    compareAtPrice: 79.99,
+    price: 79.99,
+    discountPrice: 64.99,
     rating: 4.8,
     reviewCount: 182,
     image:
@@ -15,6 +15,7 @@ export const products: Product[] = [
     shortDescription: '25g protein per scoop with zero added sugar.',
     description:
       'Fast-digesting isolate whey for lean muscle growth and recovery. Built for daily training, clean nutrition, and easy digestion.',
+    stock: 18,
     inStock: true,
     featured: true,
   },
@@ -31,6 +32,7 @@ export const products: Product[] = [
     shortDescription: 'Pure 5g creatine monohydrate per serving.',
     description:
       'Supports strength output, muscle volume, and training performance. No flavoring, no fillers, just clinically trusted creatine.',
+    stock: 32,
     inStock: true,
     featured: true,
   },
@@ -39,8 +41,8 @@ export const products: Product[] = [
     slug: 'pre-workout-green-apple',
     name: 'Pre-Workout Green Apple',
     category: 'pre-workout',
-    price: 39.99,
-    compareAtPrice: 44.99,
+    price: 44.99,
+    discountPrice: 39.99,
     rating: 4.6,
     reviewCount: 121,
     image:
@@ -48,6 +50,7 @@ export const products: Product[] = [
     shortDescription: 'Caffeine, citrulline, and beta-alanine blend.',
     description:
       'Energy and focus formula designed to improve workout intensity. Great for heavy sessions and high-volume training blocks.',
+    stock: 14,
     inStock: true,
     featured: true,
   },
@@ -64,6 +67,7 @@ export const products: Product[] = [
     shortDescription: '20g protein bar with low net carbs.',
     description:
       'Convenient on-the-go snack made for recovery and satiety between meals. Great texture, balanced macros, and no chalky aftertaste.',
+    stock: 24,
     inStock: true,
   },
   {
@@ -79,6 +83,7 @@ export const products: Product[] = [
     shortDescription: 'Essential daily vitamins and minerals for athletes.',
     description:
       'Well-rounded micronutrient support for active lifestyles. Includes vitamin D, B-complex, zinc, and magnesium in athlete-friendly doses.',
+    stock: 40,
     inStock: true,
   },
   {
@@ -94,6 +99,7 @@ export const products: Product[] = [
     shortDescription: 'High-calorie blend for healthy muscle gain.',
     description:
       'Calorie-dense formula with quality carbs and protein to support bulking phases and post-workout calorie targets.',
+    stock: 0,
     inStock: false,
   },
 ]

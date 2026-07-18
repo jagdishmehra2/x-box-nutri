@@ -4,6 +4,25 @@ import { getLatestReviews } from "../../services/reviewService";
 
 const MAX_RATING = 5;
 
+type ReviewProductRelation =
+  | {
+      name?: string | null;
+    }
+  | {
+      name?: string | null;
+    }[]
+  | null;
+
+const getReviewedProductName = (
+  products: ReviewProductRelation,
+) => {
+  if (Array.isArray(products)) {
+    return products[0]?.name ?? "";
+  }
+
+  return products?.name ?? "";
+};
+
 interface Testimonial {
   id: string;
   name: string;
@@ -56,15 +75,21 @@ export const TestimonialsSection = () => {
       try {
         const reviews = await getLatestReviews();
 
-        const formattedReviews = reviews.map((review) => ({
-          id: review.id,
-          name: review.customer_name,
-          rating: Math.min(Math.max(review.rating, 1), MAX_RATING),
-          review: review.comment,
-          role: review.products?.name
-            ? `Reviewed ${review.products.name}`
-            : "Verified customer",
-        }));
+        const formattedReviews = reviews.map((review) => {
+          const productName = getReviewedProductName(
+            review.products as ReviewProductRelation,
+          );
+
+          return {
+            id: review.id,
+            name: review.customer_name,
+            rating: Math.min(Math.max(review.rating, 1), MAX_RATING),
+            review: review.comment,
+            role: productName
+              ? `Reviewed ${productName}`
+              : "Verified customer",
+          };
+        });
 
         setTestimonials(formattedReviews);
       } catch (error) {
