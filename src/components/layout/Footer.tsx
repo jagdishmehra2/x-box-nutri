@@ -1,4 +1,5 @@
 import { AtSign, Mail, MessageCircle } from "lucide-react";
+import { Link } from "react-router-dom";
 import { contactInfo } from "../../constants/contactInfo";
 
 const contactIcons = {
@@ -64,9 +65,15 @@ export const Footer = () => {
       </div>
 
       <div className="border-t border-zinc-800">
-        <p className="mx-auto max-w-6xl px-4 py-5 text-sm text-zinc-500 sm:px-6 lg:px-8">
-          © {currentYear} NutriStack. All rights reserved.
-        </p>
+        <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-5 text-sm text-zinc-500 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
+          <p>© {currentYear} NutriStack. All rights reserved.</p>
+          <Link
+            to="/terms-and-privacy"
+            className="w-fit font-medium text-zinc-400 transition hover:text-lime-300"
+          >
+            Terms and Privacy
+          </Link>
+        </div>
       </div>
     </footer>
   );

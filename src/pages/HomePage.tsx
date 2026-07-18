@@ -71,7 +71,10 @@ const HomePage = () => {
             description={productsError}
           />
         ) : featuredProducts.length ? (
-          <ProductGrid products={featuredProducts} />
+          <ProductGrid
+            products={featuredProducts}
+            className="[&>article:nth-child(n+5)]:hidden lg:[&>article:nth-child(n+4)]:hidden"
+          />
         ) : (
           <EmptyState
             title="No featured products"

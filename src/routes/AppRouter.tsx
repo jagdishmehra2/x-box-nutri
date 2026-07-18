@@ -1,6 +1,6 @@
 /* eslint-disable react-refresh/only-export-components */
 import { lazy, Suspense, type ReactNode } from 'react'
-import { createBrowserRouter } from 'react-router-dom'
+import { createBrowserRouter, Navigate } from 'react-router-dom'
 import { Loader } from '../components/common/Loader'
 import { MainLayout } from '../components/layout/MainLayout'
 import { AdminLayout } from '../components/layout/AdminLayout'
@@ -11,12 +11,11 @@ const ProductsPage = lazy(() => import('../pages/ProductsPage'))
 const ProductDetailPage = lazy(() => import('../pages/ProductDetailPage'))
 const CartPage = lazy(() => import('../pages/CartPage'))
 const CheckoutPage = lazy(() => import('../pages/CheckoutPage'))
-const LoginPage = lazy(() => import('../pages/LoginPage'))
-const RegisterPage = lazy(() => import('../pages/RegisterPage'))
 const AuthCallbackPage = lazy(() => import('../pages/AuthCallbackPage'))
 const ProfilePage = lazy(() => import('../pages/ProfilePage'))
 const OrdersPage = lazy(() => import('../pages/OrdersPage'))
 const OrderSuccessPage = lazy(() => import('../pages/OrderSuccessPage'))
+const TermsPrivacyPage = lazy(() => import('../pages/TermsPrivacyPage'))
 const NotFoundPage = lazy(() => import('../pages/NotFoundPage'))
 const AdminDashboardPage = lazy(() => import('../pages/admin/AdminDashboardPage'))
 
@@ -55,11 +54,23 @@ export const router = createBrowserRouter([
       },
       {
         path: 'login',
-        element: lazyElement(<LoginPage />),
+        element: (
+          <Navigate
+            to="/"
+            state={{ authModal: { redirectPath: '/' } }}
+            replace
+          />
+        ),
       },
       {
         path: 'register',
-        element: lazyElement(<RegisterPage />),
+        element: (
+          <Navigate
+            to="/"
+            state={{ authModal: { redirectPath: '/' } }}
+            replace
+          />
+        ),
       },
       {
         path: 'auth/callback',
@@ -84,6 +95,10 @@ export const router = createBrowserRouter([
       {
         path: 'order-success',
         element: lazyElement(<OrderSuccessPage />),
+      },
+      {
+        path: 'terms-and-privacy',
+        element: lazyElement(<TermsPrivacyPage />),
       },
       {
         path: 'admin',

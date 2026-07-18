@@ -27,7 +27,10 @@ const AuthCallbackPage = () => {
       return
     }
 
-    navigate('/login', { replace: true })
+    navigate('/', {
+      replace: true,
+      state: { authModal: { redirectPath: safeNextPath } },
+    })
   }, [isAuthenticated, isLoading, navigate, safeNextPath])
 
   return <Loader />

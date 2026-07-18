@@ -16,7 +16,17 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />
+    return (
+      <Navigate
+        to="/"
+        state={{
+          authModal: {
+            redirectPath: `${location.pathname}${location.search}${location.hash}`,
+          },
+        }}
+        replace
+      />
+    )
   }
 
   return <>{children}</>

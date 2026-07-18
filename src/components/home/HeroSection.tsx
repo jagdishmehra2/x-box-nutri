@@ -1,8 +1,10 @@
 import { Link } from "react-router-dom";
-import { useAppSelector } from "../../hooks/useRedux";
+import { openAuthModal } from "../../features/ui/uiSlice";
+import { useAppDispatch, useAppSelector } from "../../hooks/useRedux";
 import { Button } from "../common/Button";
 
 export const HeroSection = () => {
+  const dispatch = useAppDispatch();
   const { isAuthenticated, isLoading } = useAppSelector((state) => state.auth);
 
   return (
@@ -23,11 +25,13 @@ export const HeroSection = () => {
             <Button size="lg">Shop All Products</Button>
           </Link>
           {!isAuthenticated && !isLoading ? (
-            <Link to="/register">
-              <Button variant="secondary" size="lg">
-                Create Account
-              </Button>
-            </Link>
+            <Button
+              variant="secondary"
+              size="lg"
+              onClick={() => dispatch(openAuthModal('/'))}
+            >
+              Sign In
+            </Button>
           ) : null}
         </div>
       </div>

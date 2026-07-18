@@ -1,4 +1,5 @@
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { calculateDeliveryCharge } from '../_shared/delivery-charge.ts'
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -110,8 +111,9 @@ Deno.serve(async (request) => {
     return json({ error: 'One or more cart products are unavailable.' }, 400)
   }
 
-  let amountInPaise = 0
+  let productAmountInPaise = 0
   const orderItems = []
+  const deliveryItems = []
 
   for (const product of products) {
     const quantity = quantities.get(String(product.id))
@@ -133,7 +135,8 @@ Deno.serve(async (request) => {
     }
 
     const unitPriceInPaise = Math.round(unitPrice * 100)
-    amountInPaise += unitPriceInPaise * quantity
+    productAmountInPaise += unitPriceInPaise * quantity
+    deliveryItems.push({ weight: product.weight, quantity })
     orderItems.push({
       product_id: product.id,
       product_name: product.name ?? '',
@@ -150,11 +153,26 @@ Deno.serve(async (request) => {
     })
   }
 
-  if (!Number.isSafeInteger(amountInPaise) || amountInPaise < 100) {
+  const deliveryCharge = calculateDeliveryCharge(
+    String(address.pincode),
+    deliveryItems,
+  )
+
+  if (deliveryCharge === null) {
+    return json(
+      { error: 'Delivery charge is unavailable for a cart product.' },
+      400,
+    )
+  }
+
+  const deliveryChargeInPaise = Math.round(deliveryCharge * 100)
+  const finalAmountInPaise = productAmountInPaise + deliveryChargeInPaise
+
+  if (!Number.isSafeInteger(finalAmountInPaise) || finalAmountInPaise < 100) {
     return json({ error: 'Payment amount must be at least ₹1.00.' }, 400)
   }
 
-  const totalAmount = amountInPaise / 100
+  const totalAmount = finalAmountInPaise / 100
   const deliveryEstimate =
     address.pincode === '262308' ? 'Same Day Delivery' : '2-3 Business Days'
   const { data: order, error: orderError } = await supabase
@@ -163,6 +181,7 @@ Deno.serve(async (request) => {
       user_id: user.id,
       address_id: address.id,
       total_amount: totalAmount,
+      shipping_charge: deliveryCharge,
       order_status: 'pending',
       payment_status: 'pending',
       payment_method: 'online',
@@ -214,7 +233,7 @@ Deno.serve(async (request) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        amount: amountInPaise,
+        amount: finalAmountInPaise,
         currency: 'INR',
         receipt: order.id,
         notes: { local_order_id: order.id, user_id: user.id },
@@ -242,7 +261,7 @@ Deno.serve(async (request) => {
   if (
     !razorpayResponse.ok ||
     typeof razorpayOrder?.id !== 'string' ||
-    razorpayOrder.amount !== amountInPaise ||
+    razorpayOrder.amount !== finalAmountInPaise ||
     razorpayOrder.currency !== 'INR'
   ) {
     const reason =
@@ -289,6 +308,8 @@ Deno.serve(async (request) => {
       keyId: razorpayKeyId,
       razorpayOrderId: razorpayOrder.id,
       amount: razorpayOrder.amount,
+      deliveryCharge,
+      totalAmount,
       currency: razorpayOrder.currency,
       createdAt: order.created_at,
     },

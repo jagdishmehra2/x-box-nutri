@@ -15,6 +15,7 @@ import {
   verifyRazorpayPayment,
 } from "../services/razorpay";
 import { formatCurrency } from "../utils/currency";
+import { calculateDeliveryCharge } from "../utils/deliveryCharge";
 import { setDocumentMeta } from "../utils/seo";
 import { DeliveryAddressForm, type DeliveryAddress } from "src/pages/Address";
 
@@ -57,6 +58,18 @@ const CheckoutPage = () => {
   }, [items]);
 
   const totalSavings = totalMrp - subtotal;
+  const deliveryCharge = useMemo(() => {
+    if (!selectedAddress) return null;
+
+    return calculateDeliveryCharge(
+      selectedAddress.pincode,
+      items.map((item) => ({
+        weight: item.product.weight,
+        quantity: item.quantity,
+      })),
+    );
+  }, [items, selectedAddress]);
+  const finalTotal = subtotal + (deliveryCharge ?? 0);
   useEffect(() => {
     const loadAddress = async () => {
       if (!user?.id || !supabase) {
@@ -158,6 +171,10 @@ const CheckoutPage = () => {
       throw new Error("Please select a delivery address.");
     }
 
+    if (deliveryCharge === null) {
+      throw new Error("Delivery charge is unavailable for a cart product.");
+    }
+
     const deliveryEstimate =
       selectedAddress.pincode === "262308"
         ? "Same Day Delivery"
@@ -167,7 +184,8 @@ const CheckoutPage = () => {
       .from("orders")
       .insert({
         user_id: user.id,
-        total_amount: subtotal,
+        total_amount: finalTotal,
+        shipping_charge: deliveryCharge,
         payment_method: "cod",
         payment_status: "pending",
         order_status: "confirmed",
@@ -216,7 +234,7 @@ const CheckoutPage = () => {
     const { error: paymentError } = await supabase.from("payments").insert({
       order_id: order.id,
       user_id: user.id,
-      amount: subtotal,
+      amount: finalTotal,
       payment_method: "cod",
       payment_status: "pending",
     });
@@ -245,6 +263,11 @@ const CheckoutPage = () => {
       return;
     }
 
+    if (deliveryCharge === null) {
+      toast.error("Delivery charge is unavailable for a cart product.");
+      return;
+    }
+
     paymentAttemptInFlightRef.current = true;
 
     if (paymentMethod === "cod") {
@@ -261,7 +284,7 @@ const CheckoutPage = () => {
           replace: true,
           state: {
             orderId: savedOrder.id,
-            amount: subtotal,
+            amount: finalTotal,
             paymentMethod: "Cash on Delivery",
             createdAt: savedOrder.created_at,
           },
@@ -457,10 +480,6 @@ const CheckoutPage = () => {
           <div className="mt-5 grid gap-4 md:grid-cols-3">
             {addresses.map((address) => {
               const active = selectedAddress?.id === address.id;
-              const deliveryMessage =
-                address.pincode === "262308"
-                  ? "Same Day Delivery"
-                  : "Delivery within 2-3 business days";
               return (
                 <div
                   key={address.id}
@@ -512,9 +531,15 @@ const CheckoutPage = () => {
                   <p className="text-sm text-zinc-400">{address.pincode}</p>
                   {active && (
                     <div className="mt-3 rounded-lg bg-lime-400/10 px-3 py-2">
-                      <p className="text-sm font-medium text-lime-400">
-                        🚚 {deliveryMessage}
-                      </p>
+                      {deliveryCharge === null ? (
+                        <p className="text-sm font-medium text-red-400">
+                          Delivery charge unavailable
+                        </p>
+                      ) : (
+                        <p className="text-sm font-medium text-lime-400">
+                          Delivery charge: {formatCurrency(deliveryCharge)}
+                        </p>
+                      )}
                     </div>
                   )}
                 </div>
@@ -638,10 +663,20 @@ const CheckoutPage = () => {
             <p>You Save</p>
             <p>{formatCurrency(totalSavings)}</p>
           </div>
+          <div className="mt-3 flex items-center justify-between text-sm text-zinc-300">
+            <p>Delivery charge</p>
+            <p>
+              {selectedAddress
+                ? deliveryCharge === null
+                  ? "Unavailable"
+                  : formatCurrency(deliveryCharge)
+                : "Select an address"}
+            </p>
+          </div>
           <div className="mt-5 flex items-center justify-between border-t border-zinc-800 pt-4">
             <p className="text-sm text-zinc-400">Total</p>
             <p className="text-3xl font-bold text-lime-400">
-              {formatCurrency(subtotal)}
+              {formatCurrency(finalTotal)}
             </p>
           </div>
 
@@ -650,7 +685,7 @@ const CheckoutPage = () => {
               className="mt-6 w-full"
               size="lg"
               onClick={handlePayNow}
-              disabled={isProcessingPayment}
+              disabled={isProcessingPayment || deliveryCharge === null}
               aria-label="Pay now using Razorpay"
             >
               {isProcessingPayment

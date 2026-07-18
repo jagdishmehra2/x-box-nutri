@@ -222,7 +222,7 @@ export const getAllProducts = getProducts;
 export const getFeaturedProducts = async () => {
   const { products } = await getProducts({
     featuredOnly: true,
-    limit: 3,
+    limit: 4,
   });
 
   return products;

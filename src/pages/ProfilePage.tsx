@@ -25,7 +25,7 @@ const ProfilePage = () => {
       setIsLoggingOut(true)
       await signOutUser()
       dispatch(logout())
-      navigate('/login', { replace: true })
+      navigate('/', { replace: true })
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'Unable to log out.')
     } finally {

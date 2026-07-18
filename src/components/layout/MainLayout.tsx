@@ -1,5 +1,7 @@
-import { Outlet } from 'react-router-dom'
-import { useAppSelector } from '../../hooks/useRedux'
+import { useCallback, useEffect } from 'react'
+import { Outlet, useLocation, useNavigate } from 'react-router-dom'
+import { useAppDispatch, useAppSelector } from '../../hooks/useRedux'
+import { closeAuthModal, openAuthModal } from '../../features/ui/uiSlice'
 import { supabase } from '../../lib/supabase'
 import { getProducts } from '../../services/productService'
 import {
@@ -7,6 +9,7 @@ import {
   createSupabaseAssistantResponder,
   createSupabaseUsageStore,
 } from '../aiassistant'
+import { AuthPromptModal } from '../auth/AuthPromptModal'
 import { Footer } from './Footer'
 import { Navbar } from './Navbar'
 
@@ -38,8 +41,45 @@ const searchAssistantProducts = async (
   return result.products
 }
 
+interface AuthLocationState {
+  authModal?: {
+    redirectPath?: string
+  }
+}
+
 export const MainLayout = () => {
-  const user = useAppSelector((state) => state.auth.user)
+  const dispatch = useAppDispatch()
+  const location = useLocation()
+  const navigate = useNavigate()
+  const { isAuthenticated, user } = useAppSelector((state) => state.auth)
+  const { authRedirectPath, isAuthModalOpen } = useAppSelector((state) => state.ui)
+  const authModalState = (location.state as AuthLocationState | null)?.authModal
+  const handleCloseAuthModal = useCallback(() => {
+    dispatch(closeAuthModal())
+  }, [dispatch])
+
+  useEffect(() => {
+    if (!authModalState) return
+
+    dispatch(openAuthModal(authModalState.redirectPath))
+    navigate(`${location.pathname}${location.search}${location.hash}`, {
+      replace: true,
+      state: null,
+    })
+  }, [
+    authModalState,
+    dispatch,
+    location.hash,
+    location.pathname,
+    location.search,
+    navigate,
+  ])
+
+  useEffect(() => {
+    if (isAuthenticated && isAuthModalOpen) {
+      dispatch(closeAuthModal())
+    }
+  }, [dispatch, isAuthenticated, isAuthModalOpen])
 
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
@@ -54,6 +94,11 @@ export const MainLayout = () => {
         brandName="NutriStack"
         responder={aiResponder}
         usageStore={aiUsageStore}
+      />
+      <AuthPromptModal
+        open={!isAuthenticated && isAuthModalOpen}
+        redirectPath={authRedirectPath}
+        onClose={handleCloseAuthModal}
       />
     </div>
   )
