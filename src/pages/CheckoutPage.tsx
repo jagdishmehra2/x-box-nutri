@@ -15,7 +15,10 @@ import {
   verifyRazorpayPayment,
 } from "../services/razorpay";
 import { formatCurrency } from "../utils/currency";
-import { calculateDeliveryCharge } from "../utils/deliveryCharge";
+import {
+  calculateDeliveryCharge,
+  isCashOnDeliveryAvailableForPincode,
+} from "../utils/deliveryCharge";
 import { setDocumentMeta } from "../utils/seo";
 import { DeliveryAddressForm, type DeliveryAddress } from "src/pages/Address";
 
@@ -69,6 +72,13 @@ const CheckoutPage = () => {
       })),
     );
   }, [items, selectedAddress]);
+  const isCashOnDeliveryAvailable = useMemo(() => {
+    if (!selectedAddress) return false;
+
+    return isCashOnDeliveryAvailableForPincode(selectedAddress.pincode);
+  }, [selectedAddress]);
+  const isCashOnDeliveryUnavailable =
+    selectedAddress !== null && !isCashOnDeliveryAvailable;
   const finalTotal = subtotal + (deliveryCharge ?? 0);
   useEffect(() => {
     const loadAddress = async () => {
@@ -132,6 +142,11 @@ const CheckoutPage = () => {
       window.removeEventListener("beforeunload", preventLeaving);
     };
   }, [paymentInteractionLocked]);
+  useEffect(() => {
+    if (paymentMethod === "cod" && isCashOnDeliveryUnavailable) {
+      setPaymentMethod("online");
+    }
+  }, [isCashOnDeliveryUnavailable, paymentMethod]);
   const handleDeleteAddress = async (id: string) => {
     if (!supabase) return;
 
@@ -173,6 +188,10 @@ const CheckoutPage = () => {
 
     if (deliveryCharge === null) {
       throw new Error("Delivery charge is unavailable for a cart product.");
+    }
+
+    if (!isCashOnDeliveryAvailable) {
+      throw new Error("Cash on delivery is not available for your order.");
     }
 
     const deliveryEstimate =
@@ -265,6 +284,11 @@ const CheckoutPage = () => {
 
     if (deliveryCharge === null) {
       toast.error("Delivery charge is unavailable for a cart product.");
+      return;
+    }
+
+    if (paymentMethod === "cod" && !isCashOnDeliveryAvailable) {
+      toast.error("Cash on delivery is not available for your order.");
       return;
     }
 
@@ -594,24 +618,38 @@ const CheckoutPage = () => {
             </label>
 
             <label
-              className={`flex cursor-pointer items-center justify-between rounded-xl border p-4 transition ${
-                paymentMethod === "cod"
-                  ? "border-lime-400 bg-lime-400/10"
-                  : "border-zinc-800"
+              aria-disabled={isCashOnDeliveryUnavailable}
+              className={`flex items-center justify-between rounded-xl border p-4 transition ${
+                isCashOnDeliveryUnavailable
+                  ? "cursor-not-allowed border-zinc-800 bg-zinc-950/60 opacity-70"
+                  : paymentMethod === "cod"
+                    ? "border-lime-400 bg-lime-400/10"
+                    : "cursor-pointer border-zinc-800"
               }`}
             >
               <div>
                 <p className="font-medium text-white">Cash on Delivery</p>
 
-                <p className="text-sm text-zinc-400">
-                  Pay when your order arrives.
-                </p>
+                {isCashOnDeliveryUnavailable ? (
+                  <p className="text-sm text-red-400">
+                    Cash on delivery is not available for your order.
+                  </p>
+                ) : (
+                  <p className="text-sm text-zinc-400">
+                    Pay when your order arrives.
+                  </p>
+                )}
               </div>
 
               <input
                 type="radio"
                 checked={paymentMethod === "cod"}
-                onChange={() => setPaymentMethod("cod")}
+                disabled={isCashOnDeliveryUnavailable}
+                onChange={() => {
+                  if (!isCashOnDeliveryUnavailable) {
+                    setPaymentMethod("cod");
+                  }
+                }}
               />
             </label>
           </div>
@@ -685,7 +723,11 @@ const CheckoutPage = () => {
               className="mt-6 w-full"
               size="lg"
               onClick={handlePayNow}
-              disabled={isProcessingPayment || deliveryCharge === null}
+              disabled={
+                isProcessingPayment ||
+                deliveryCharge === null ||
+                (paymentMethod === "cod" && !isCashOnDeliveryAvailable)
+              }
               aria-label="Pay now using Razorpay"
             >
               {isProcessingPayment

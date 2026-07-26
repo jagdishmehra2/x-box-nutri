@@ -10,6 +10,14 @@ const FLAT_DELIVERY_RULES = [
 
 const DELIVERY_CHARGE_PER_KG = 150;
 
+const findFlatDeliveryRule = (pincode: string) =>
+  FLAT_DELIVERY_RULES.find((rule) =>
+    rule.pincodes.some((rulePincode) => rulePincode === pincode),
+  );
+
+export const isCashOnDeliveryAvailableForPincode = (pincode: string) =>
+  Boolean(findFlatDeliveryRule(pincode));
+
 const parseWeightInKg = (weight: string | null | undefined) => {
   if (!weight) return null;
 
@@ -32,9 +40,7 @@ export const calculateDeliveryCharge = (
 ): number | null => {
   if (!/^\d{6}$/.test(pincode)) return null;
 
-  const flatRule = FLAT_DELIVERY_RULES.find((rule) =>
-    rule.pincodes.some((rulePincode) => rulePincode === pincode),
-  );
+  const flatRule = findFlatDeliveryRule(pincode);
   if (flatRule) return flatRule.charge;
 
   let totalWeightInKg = 0;
