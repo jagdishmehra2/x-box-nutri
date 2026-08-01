@@ -101,6 +101,26 @@ export const router = createBrowserRouter([
         element: lazyElement(<TermsPrivacyPage />),
       },
       {
+        path: 'terms-and-conditions',
+        element: lazyElement(<TermsPrivacyPage />),
+      },
+      {
+        path: 'privacy-policy',
+        element: lazyElement(<TermsPrivacyPage />),
+      },
+      {
+        path: 'shipping-policy',
+        element: lazyElement(<TermsPrivacyPage />),
+      },
+      {
+        path: 'contact-us',
+        element: lazyElement(<TermsPrivacyPage />),
+      },
+      {
+        path: 'cancellation-and-refunds',
+        element: lazyElement(<TermsPrivacyPage />),
+      },
+      {
         path: 'admin',
         element: lazyElement(
           <ProtectedRoute>

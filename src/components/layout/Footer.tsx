@@ -1,6 +1,7 @@
 import { AtSign, Mail, MessageCircle } from "lucide-react";
 import { Link } from "react-router-dom";
 import { contactInfo } from "../../constants/contactInfo";
+import { legalPageLinks } from "../../constants/legalPages";
 
 const contactIcons = {
   mail: Mail,
@@ -13,7 +14,7 @@ export const Footer = () => {
 
   return (
     <footer className="border-t border-zinc-800 bg-zinc-950">
-      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:px-6 md:grid-cols-[1.2fr_1fr] lg:px-8">
+      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-10 sm:px-6 md:grid-cols-[1.2fr_0.8fr_1fr] lg:px-8">
         <div>
           <p className="text-lg flex font-semibold text-zinc-100">
             {" "}
@@ -27,6 +28,22 @@ export const Footer = () => {
           <p className="mt-2 max-w-md text-sm leading-6 text-zinc-400">
             Premium supplements for strength, recovery, and performance.
           </p>
+        </div>
+
+        <div>
+          <h2 className="text-lg font-semibold text-white">Policies</h2>
+          <ul className="mt-4 space-y-2">
+            {legalPageLinks.map((link) => (
+              <li key={link.to}>
+                <Link
+                  to={link.to}
+                  className="text-sm font-medium text-zinc-400 transition hover:text-lime-300"
+                >
+                  {link.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
         </div>
 
         <div>
@@ -68,10 +85,10 @@ export const Footer = () => {
         <div className="mx-auto flex max-w-6xl flex-col gap-3 px-4 py-5 text-sm text-zinc-500 sm:flex-row sm:items-center sm:justify-between sm:px-6 lg:px-8">
           <p>© {currentYear} NutriStack. All rights reserved.</p>
           <Link
-            to="/terms-and-privacy"
+            to="/terms-and-conditions"
             className="w-fit font-medium text-zinc-400 transition hover:text-lime-300"
           >
-            Terms and Privacy
+            Terms and Conditions
           </Link>
         </div>
       </div>
