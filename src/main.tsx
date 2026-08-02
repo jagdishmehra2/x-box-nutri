@@ -1,5 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
+import { SpeedInsights } from "@vercel/speed-insights/react"
+import { Analytics } from "@vercel/analytics/react"
 import { Toaster } from 'react-hot-toast'
 import { Provider } from 'react-redux'
 import App from './App'
@@ -10,6 +12,8 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <Provider store={store}>
       <App />
+      <SpeedInsights/>
+      <Analytics/>
       <Toaster
         position="top-right"
         toastOptions={{
