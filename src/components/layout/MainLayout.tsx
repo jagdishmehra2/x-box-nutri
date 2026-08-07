@@ -95,11 +95,14 @@ export const MainLayout = () => {
         responder={aiResponder}
         usageStore={aiUsageStore}
       />
-      <AuthPromptModal
-        open={!isAuthenticated && isAuthModalOpen}
-        redirectPath={authRedirectPath}
-        onClose={handleCloseAuthModal}
-      />
+      {!isAuthenticated && isAuthModalOpen ? (
+        <AuthPromptModal
+          key={authRedirectPath}
+          open
+          redirectPath={authRedirectPath}
+          onClose={handleCloseAuthModal}
+        />
+      ) : null}
     </div>
   )
 }

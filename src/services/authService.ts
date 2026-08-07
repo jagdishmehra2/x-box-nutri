@@ -2,6 +2,11 @@ import { supabase } from '../lib/supabase'
 import type { User } from '@supabase/supabase-js'
 import type { AuthUser } from '../types/auth'
 
+export interface GoogleSignInCredential {
+  credential: string
+  nonce?: string
+}
+
 export const mapAuthUser = (user: User): AuthUser => {
   const email = user.email ?? ''
 
@@ -29,10 +34,6 @@ const fallbackAuthError = (message: string) => {
   }
 }
 
-const getSafeRedirectPath = (redirectPath: string) => {
-  return redirectPath.startsWith('/') ? redirectPath : '/'
-}
-
 export const signInWithEmail = async (email: string, password: string) => {
   if (!supabase) {
     return fallbackAuthError('Please check your credentials.')
@@ -49,19 +50,22 @@ export const signUpWithEmail = async (email: string, password: string) => {
   return supabase.auth.signUp({ email, password })
 }
 
-export const signInWithGoogle = async (redirectPath = '/') => {
+export const signInWithGoogle = async ({
+  credential,
+  nonce,
+}: GoogleSignInCredential) => {
   if (!supabase) {
-    return fallbackAuthError('Google login is not configured.')
+    return fallbackAuthError('Google Login Failed Please Try Again')
   }
 
-  const callbackUrl = new URL('/auth/callback', window.location.origin)
-  callbackUrl.searchParams.set('next', getSafeRedirectPath(redirectPath))
+  if (!credential) {
+    return fallbackAuthError('Google sign-in did not have valid credential.')
+  }
 
-  return supabase.auth.signInWithOAuth({
+  return supabase.auth.signInWithIdToken({
     provider: 'google',
-    options: {
-      redirectTo: callbackUrl.toString(),
-    },
+    token: credential,
+    ...(nonce ? { nonce } : {}),
   })
 }
 

@@ -1,8 +1,11 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { X } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import { GoogleAuthButton } from './GoogleAuthButton'
-import { signInWithGoogle } from '../../services/authService'
+import {
+  signInWithGoogle,
+  type GoogleSignInCredential,
+} from '../../services/authService'
 
 interface AuthPromptModalProps {
   open: boolean
@@ -19,13 +22,12 @@ export const AuthPromptModal = ({
   onClose,
   redirectPath = '/',
 }: AuthPromptModalProps) => {
+  const navigate = useNavigate()
   const [submitError, setSubmitError] = useState('')
   const [isGoogleSubmitting, setIsGoogleSubmitting] = useState(false)
 
   useEffect(() => {
     if (!open) {
-      setSubmitError('')
-      setIsGoogleSubmitting(false)
       return
     }
 
@@ -42,17 +44,30 @@ export const AuthPromptModal = ({
     }
   }, [onClose, open])
 
-  const handleGoogleSignIn = async () => {
-    setSubmitError('')
-    setIsGoogleSubmitting(true)
+  const handleGoogleCredential = useCallback(
+    async ({ credential, nonce }: GoogleSignInCredential) => {
+      const safeRedirectPath = getSafeRedirectPath(redirectPath)
 
-    const { error } = await signInWithGoogle(getSafeRedirectPath(redirectPath))
+      setSubmitError('')
+      setIsGoogleSubmitting(true)
 
-    if (error) {
-      setSubmitError(error.message)
-      setIsGoogleSubmitting(false)
-    }
-  }
+      const { error } = await signInWithGoogle({ credential, nonce })
+
+      if (error) {
+        setSubmitError(error.message)
+        setIsGoogleSubmitting(false)
+        return
+      }
+
+      navigate(safeRedirectPath, { replace: true })
+    },
+    [navigate, redirectPath],
+  )
+
+  const handleGoogleError = useCallback((message: string) => {
+    setSubmitError(message)
+    setIsGoogleSubmitting(false)
+  }, [])
 
   if (!open) {
     return null
@@ -93,7 +108,8 @@ export const AuthPromptModal = ({
           <GoogleAuthButton
             className="h-11 w-full max-w-72 rounded-lg border border-[#9d3f67] px-4 text-sm font-semibold text-zinc-800 hover:bg-zinc-50 focus-visible:outline-[#9d3f67] sm:w-auto sm:min-w-56 [&_svg]:h-5 [&_svg]:w-5"
             isLoading={isGoogleSubmitting}
-            onClick={handleGoogleSignIn}
+            onCredential={handleGoogleCredential}
+            onError={handleGoogleError}
           />
         </div>
 

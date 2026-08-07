@@ -22,6 +22,8 @@ import {
 import { setDocumentMeta } from "../utils/seo";
 import { DeliveryAddressForm, type DeliveryAddress } from "src/pages/Address";
 
+const IS_ONLINE_PAYMENT_DISABLED = true;
+
 const CheckoutPage = () => {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
@@ -34,9 +36,7 @@ const CheckoutPage = () => {
   const [addresses, setAddresses] = useState<DeliveryAddress[]>([]);
   const [selectedAddress, setSelectedAddress] =
     useState<DeliveryAddress | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<"online" | "cod">(
-    "online",
-  );
+  const [paymentMethod, setPaymentMethod] = useState<"online" | "cod">("cod");
   const [isLoadingAddress, setIsLoadingAddress] = useState(true);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [paymentLoading, setPaymentLoading] = useState(false);
@@ -142,11 +142,11 @@ const CheckoutPage = () => {
       window.removeEventListener("beforeunload", preventLeaving);
     };
   }, [paymentInteractionLocked]);
-  useEffect(() => {
-    if (paymentMethod === "cod" && isCashOnDeliveryUnavailable) {
-      setPaymentMethod("online");
-    }
-  }, [isCashOnDeliveryUnavailable, paymentMethod]);
+  // useEffect(() => {
+  //   if (paymentMethod === "cod" && isCashOnDeliveryUnavailable) {
+  //     setPaymentMethod("online");
+  //   }
+  // }, [isCashOnDeliveryUnavailable, paymentMethod]);
   const handleDeleteAddress = async (id: string) => {
     if (!supabase) return;
 
@@ -289,6 +289,11 @@ const CheckoutPage = () => {
 
     if (paymentMethod === "cod" && !isCashOnDeliveryAvailable) {
       toast.error("Cash on delivery is not available for your order.");
+      return;
+    }
+
+    if (IS_ONLINE_PAYMENT_DISABLED && paymentMethod === "online") {
+      toast.error("Online payment is temporarily unavailable.");
       return;
     }
 
@@ -596,24 +601,32 @@ const CheckoutPage = () => {
 
           <div className="mt-5 space-y-3">
             <label
-              className={`flex cursor-pointer items-center justify-between rounded-xl border p-4 transition ${
-                paymentMethod === "online"
-                  ? "border-lime-400 bg-lime-400/10"
-                  : "border-zinc-800"
+              aria-disabled={IS_ONLINE_PAYMENT_DISABLED}
+              className={`flex items-center justify-between rounded-xl border p-4 transition ${
+                IS_ONLINE_PAYMENT_DISABLED
+                  ? "cursor-not-allowed border-zinc-800 bg-zinc-950/60 opacity-70"
+                  : paymentMethod === "online"
+                    ? "border-lime-400 bg-lime-400/10"
+                    : "cursor-pointer border-zinc-800"
               }`}
             >
               <div>
                 <p className="font-medium text-white">Pay Online</p>
 
                 <p className="text-sm text-zinc-400">
-                  Secure payment via Razorpay
+                  Temporarily unavailable
                 </p>
               </div>
 
               <input
                 type="radio"
                 checked={paymentMethod === "online"}
-                onChange={() => setPaymentMethod("online")}
+                disabled={IS_ONLINE_PAYMENT_DISABLED}
+                onChange={() => {
+                  if (!IS_ONLINE_PAYMENT_DISABLED) {
+                    setPaymentMethod("online");
+                  }
+                }}
               />
             </label>
 
@@ -726,9 +739,14 @@ const CheckoutPage = () => {
               disabled={
                 isProcessingPayment ||
                 deliveryCharge === null ||
+                (paymentMethod === "online" && IS_ONLINE_PAYMENT_DISABLED) ||
                 (paymentMethod === "cod" && !isCashOnDeliveryAvailable)
               }
-              aria-label="Pay now using Razorpay"
+              aria-label={
+                paymentMethod === "cod"
+                  ? "Confirm cash on delivery order"
+                  : "Pay now using Razorpay"
+              }
             >
               {isProcessingPayment
                 ? "Processing..."
