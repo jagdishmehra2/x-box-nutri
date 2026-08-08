@@ -238,7 +238,7 @@ const OrdersPage = () => {
 
             {order.payment_method === "online"
               ? "Paid Online"
-              : "Cash on Delivery"}
+              : "Pay After Delivery"}
           </div>
 
           <div className="flex items-center gap-2">

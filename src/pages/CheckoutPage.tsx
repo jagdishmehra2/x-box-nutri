@@ -191,7 +191,7 @@ const CheckoutPage = () => {
     }
 
     if (!isCashOnDeliveryAvailable) {
-      throw new Error("Cash on delivery is not available for your order.");
+      throw new Error("Pay After Delivery is not available for your order.");
     }
 
     const deliveryEstimate =
@@ -288,7 +288,7 @@ const CheckoutPage = () => {
     }
 
     if (paymentMethod === "cod" && !isCashOnDeliveryAvailable) {
-      toast.error("Cash on delivery is not available for your order.");
+      toast.error("Pay After Delivery is not available for your order.");
       return;
     }
 
@@ -314,7 +314,7 @@ const CheckoutPage = () => {
           state: {
             orderId: savedOrder.id,
             amount: finalTotal,
-            paymentMethod: "Cash on Delivery",
+            paymentMethod: "Pay After Delivery",
             createdAt: savedOrder.created_at,
           },
         });
@@ -641,11 +641,11 @@ const CheckoutPage = () => {
               }`}
             >
               <div>
-                <p className="font-medium text-white">Cash on Delivery</p>
+                <p className="font-medium text-white">Pay After Delivery</p>
 
                 {isCashOnDeliveryUnavailable ? (
                   <p className="text-sm text-red-400">
-                    Cash on delivery is not available for your order.
+                    Pay After Delivery is not available for your order.
                   </p>
                 ) : (
                   <p className="text-sm text-zinc-400">
@@ -744,7 +744,7 @@ const CheckoutPage = () => {
               }
               aria-label={
                 paymentMethod === "cod"
-                  ? "Confirm cash on delivery order"
+                  ? "Confirm Pay After Delivery order"
                   : "Pay now using Razorpay"
               }
             >
