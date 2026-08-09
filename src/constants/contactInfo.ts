@@ -1,8 +1,8 @@
 export const contactInfo = {
   email: {
     label: 'Email',
-    value: 'support@nutristack.com',
-    href: 'mailto:support@nutristack.com',
+    value: 'support@nutristack.in',
+    href: 'mailto:support@nutristack.in',
     icon: 'mail',
   },
   instagram: {
