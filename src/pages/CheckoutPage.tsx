@@ -6,6 +6,7 @@ import { useAppDispatch, useAppSelector } from "../hooks/useRedux";
 import { Button } from "../components/common/Button";
 import { EmptyState } from "../components/common/EmptyState";
 import { PaymentLoadingOverlay } from "../components/checkout/PaymentLoadingOverlay";
+import { UpiPaymentModal } from "../components/checkout/UpiPaymentModal";
 import { clearCart } from "../features/cart/cartSlice";
 import { supabase } from "../lib/supabase";
 import {
@@ -36,7 +37,9 @@ const CheckoutPage = () => {
   const [addresses, setAddresses] = useState<DeliveryAddress[]>([]);
   const [selectedAddress, setSelectedAddress] =
     useState<DeliveryAddress | null>(null);
-  const [paymentMethod, setPaymentMethod] = useState<"online" | "cod">("cod");
+  const [paymentMethod, setPaymentMethod] = useState<"upi" | "online" | "cod">("upi");
+  const [isUpiModalOpen, setIsUpiModalOpen] = useState(false);
+  const [upiTxRef, setUpiTxRef] = useState("");
   const [isLoadingAddress, setIsLoadingAddress] = useState(true);
   const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [paymentLoading, setPaymentLoading] = useState(false);
@@ -299,6 +302,14 @@ const CheckoutPage = () => {
 
     paymentAttemptInFlightRef.current = true;
 
+    if (paymentMethod === "upi") {
+      const ref = `NS${Date.now()}${Math.floor(Math.random() * 1000)}`;
+      setUpiTxRef(ref);
+      setIsUpiModalOpen(true);
+      paymentAttemptInFlightRef.current = false;
+      return;
+    }
+
     if (paymentMethod === "cod") {
       try {
         setIsProcessingPayment(true);
@@ -434,6 +445,89 @@ const CheckoutPage = () => {
 
       setIsProcessingPayment(false);
       paymentAttemptInFlightRef.current = false;
+    }
+  };
+
+  const handleConfirmUpiPayment = async (utr: string) => {
+    if (!supabase || !user?.id || !selectedAddress || deliveryCharge === null) return;
+    setIsProcessingPayment(true);
+
+    try {
+      const deliveryEstimate =
+        selectedAddress.pincode === "262308"
+          ? "Same Day Delivery"
+          : "2-3 Business Days";
+
+      const { data: order, error: orderError } = await supabase
+        .from("orders")
+        .insert({
+          user_id: user.id,
+          total_amount: finalTotal,
+          shipping_charge: deliveryCharge,
+          payment_method: "upi",
+          payment_status: "pending",
+          order_status: "confirmed",
+          shipping_name: selectedAddress.full_name,
+          shipping_phone: selectedAddress.phone,
+          shipping_address: selectedAddress.address,
+          shipping_landmark: selectedAddress.landmark,
+          shipping_city: selectedAddress.city,
+          shipping_state: selectedAddress.state,
+          shipping_pincode: selectedAddress.pincode,
+          address_id: selectedAddress.id,
+          delivery_estimate: deliveryEstimate,
+        })
+        .select("id, created_at")
+        .single();
+
+      if (orderError || !order) {
+        throw new Error(orderError?.message ?? "Unable to place order.");
+      }
+
+      const orderItemsPayload = items.map((item) => ({
+        order_id: order.id,
+        product_id: item.product.id,
+        product_name: item.product.name,
+        product_image: item.product.image,
+        product_brand: item.product.brand,
+        product_category: item.product.category,
+        product_subtype: item.product.subtype,
+        product_flavor: item.product.flavor,
+        product_weight: item.product.weight,
+        unit_price: item.product.discountPrice ?? item.product.price,
+        quantity: item.quantity,
+        mrp: item.product.price,
+        total_price: (item.product.discountPrice ?? item.product.price) * item.quantity,
+      }));
+
+      await supabase.from("order_items").insert(orderItemsPayload);
+
+      await supabase.from("payments").insert({
+        order_id: order.id,
+        user_id: user.id,
+        amount: finalTotal,
+        payment_method: "upi",
+        payment_status: "pending",
+        failure_reason: `UTR Ref: ${utr}`,
+      });
+
+      dispatch(clearCart());
+      setIsUpiModalOpen(false);
+      toast.success("UTR submitted! Order placed (Pending bank verification).");
+
+      navigate("/order-success", {
+        replace: true,
+        state: {
+          orderId: order.id,
+          amount: finalTotal,
+          paymentMethod: `UPI (Ref: ${utr})`,
+          createdAt: order.created_at,
+        },
+      });
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Payment submission failed.");
+    } finally {
+      setIsProcessingPayment(false);
     }
   };
   if (!items.length && !paymentSuccessRedirect) {
@@ -601,6 +695,33 @@ const CheckoutPage = () => {
 
           <div className="mt-5 space-y-3">
             <label
+              className={`flex items-center justify-between rounded-xl border p-4 cursor-pointer transition ${
+                paymentMethod === "upi"
+                  ? "border-lime-400 bg-lime-400/10"
+                  : "border-zinc-800 hover:border-zinc-700"
+              }`}
+            >
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="font-medium text-white">Pay with UPI</p>
+                  <span className="rounded bg-lime-400/20 px-2 py-0.5 text-xs font-semibold text-lime-400">
+                    Direct NPCI UPI
+                  </span>
+                </div>
+                <p className="text-sm text-zinc-400 mt-0.5">
+                  Google Pay / PhonePe / BHIM / Paytm & QR Code
+                </p>
+              </div>
+
+              <input
+                type="radio"
+                name="paymentMethod"
+                checked={paymentMethod === "upi"}
+                onChange={() => setPaymentMethod("upi")}
+              />
+            </label>
+
+            <label
               aria-disabled={IS_ONLINE_PAYMENT_DISABLED}
               className={`flex items-center justify-between rounded-xl border p-4 transition ${
                 IS_ONLINE_PAYMENT_DISABLED
@@ -620,6 +741,7 @@ const CheckoutPage = () => {
 
               <input
                 type="radio"
+                name="paymentMethod"
                 checked={paymentMethod === "online"}
                 disabled={IS_ONLINE_PAYMENT_DISABLED}
                 onChange={() => {
@@ -656,6 +778,7 @@ const CheckoutPage = () => {
 
               <input
                 type="radio"
+                name="paymentMethod"
                 checked={paymentMethod === "cod"}
                 disabled={isCashOnDeliveryUnavailable}
                 onChange={() => {
@@ -745,14 +868,18 @@ const CheckoutPage = () => {
               aria-label={
                 paymentMethod === "cod"
                   ? "Confirm Pay After Delivery order"
-                  : "Pay now using Razorpay"
+                  : paymentMethod === "upi"
+                    ? "Pay with UPI app or QR code"
+                    : "Pay now using Razorpay"
               }
             >
               {isProcessingPayment
                 ? "Processing..."
                 : paymentMethod === "cod"
                   ? "Confirm Your Order"
-                  : "Pay Now"}
+                  : paymentMethod === "upi"
+                    ? "Pay with UPI"
+                    : "Pay Now"}
             </Button>
           ) : (
             <Button className="mt-6 w-full" size="lg" disabled>
@@ -761,6 +888,15 @@ const CheckoutPage = () => {
           )}
         </article>
       )}
+
+      <UpiPaymentModal
+        isOpen={isUpiModalOpen}
+        onClose={() => setIsUpiModalOpen(false)}
+        amount={finalTotal}
+        transactionRef={upiTxRef}
+        onConfirmPayment={handleConfirmUpiPayment}
+        isProcessing={isProcessingPayment}
+      />
       </section>
     </>
   );
